@@ -246,12 +246,15 @@ void TIM1_UP_TIM10_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
 	++Time_Tick;	//Time_Tick在CAN接收服务函数中置零
-	if(Time_Tick>200)
+	if(Time_Tick>200)	//没有云台数据，停止动作
+	{
 		Move_Allow=Shoot_State=0;
+		Switch_State[0]=Switch_State[1]=1;
+	}
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
-	Updata_Switch_State();
+//	Updata_Switch_State();
 	if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_RESET)
 	{
 		//左边检测到墙壁，开始反转
@@ -274,12 +277,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	
 	if(Move_Allow==1)
 	{
-//		if(Classic_First_Start==1)
-//		{
-//			Classic_First_Start=0;
-//			if(direction==0)
-//				direction=1;
-//		}
 		motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed);
 		for (uint8_t i=0; i<2; i++)
 		{
@@ -343,9 +340,17 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			}
 		break;
 		
-		default:	//Stop
-			Cartridge_wheel_PID_Calc(0);
-			Motor_Output[Cartridge]=0;
+		default:	//Load
+			if(Switch_State[1]==0)
+			{
+				Cartridge_wheel_PID_Calc(1000);
+				Motor_Output[Cartridge]=Cartridge_wheel.output;
+			}
+			else
+			{
+				Cartridge_wheel_PID_Calc(0);
+				Motor_Output[Cartridge]=Cartridge_wheel.output;
+			}
 		break;
 	}
 	

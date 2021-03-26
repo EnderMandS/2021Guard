@@ -1,6 +1,8 @@
 #include "bullet.h"
 #include "bsp_can.h"
 #include "judge.h"
+#include "shoot.h"
+#include "classic.h"
 
 #define Heat_17mm 10
 #define Heat_42mm 100

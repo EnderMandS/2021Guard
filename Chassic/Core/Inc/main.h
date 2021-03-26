@@ -59,10 +59,10 @@ void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
 /* USER CODE BEGIN Private defines */
-#define REDR_Pin 								GPIO_PIN_11
+#define REDR_Pin 								GPIO_PIN_9
 #define REDR_GPIO_Port 					GPIOE
 
-#define REDL_Pin 								GPIO_PIN_9
+#define REDL_Pin 								GPIO_PIN_11
 #define REDL_GPIO_Port 					GPIOE
 
 

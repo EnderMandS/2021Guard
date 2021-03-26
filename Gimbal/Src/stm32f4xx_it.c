@@ -108,7 +108,7 @@ extern UART_HandleTypeDef huart6;
 /* USER CODE END EV */
 
 /******************************************************************************/
-/*           Cortex-M4 Processor Interruption and Exception Handlers          */ 
+/*           Cortex-M4 Processor Interruption and Exception Handlers          */
 /******************************************************************************/
 /**
   * @brief This function handles Non maskable interrupt.
@@ -427,7 +427,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		Motor_Output[Fric_2]=Fric_wheel[1].output;
 	
 	uint8_t Switch_State=0;	//发送微动开关状态
-	if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_14) == GPIO_PIN_RESET)
+	if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9) == GPIO_PIN_RESET)
 		Switch_State=0;
 	else
 		Switch_State=1;

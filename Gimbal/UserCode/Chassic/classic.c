@@ -28,38 +28,6 @@ void Chassis_init(void)
     set_spd[0] = 0;
     set_spd[1] = 0;
 }
-float Slow_Change_Speed(int dir, uint16_t Speed)
-{
-	static uint16_t Time_Cnt=0;
-	static int Last_Dir=0;
-	float Back=0;
-	if(Last_Dir!=dir)
-	{
-		++Time_Cnt;
-//		if(Time_Cnt<=500)
-//			Back = (500.0-(Time_Cnt*1.0)) /500.0 * (Speed*1.0) * (Last_Dir*1.0);
-//		else if(Time_Cnt>500 && Time_Cnt<=1000)
-//			Back = ((Time_Cnt*1.0)-500.0) /500.0 * (Speed*1.0) * (dir*1.0);
-//		else if(Time_Cnt>1000)
-//		{
-//			Time_Cnt=0;
-//			Last_Dir=dir;
-//		}
-		if(Time_Cnt<=1000)
-		{
-			Back = cos((Time_Cnt*1.0)/1000.0*PI) * (Speed*1.0);
-		}
-		else
-		{
-			Time_Cnt=0;
-			Last_Dir=dir;
-		}
-	}
-	else
-		Back=dir*Speed;
-	
-	return Back;
-}
 void Chassic_Ctrl(uint8_t *Data, uint8_t Len)
 {
 	CAN_TxHeaderTypeDef can_tx_message;
@@ -72,4 +40,3 @@ void Chassic_Ctrl(uint8_t *Data, uint8_t Len)
 	memcpy(can_send_data,Data,Len);
 	HAL_CAN_AddTxMessage(&hcan1, &can_tx_message, can_send_data, &send_mail_box);
 }
-

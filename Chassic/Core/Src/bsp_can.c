@@ -78,6 +78,7 @@ void Gimbal_Receive(uint8_t Receive_Data[8])
 			break;
 		
 		default:		//Stop
+			Move_Allow=0;
 			break;
 	}
 	switch( Receive_Data[1] )	//Shoot control
