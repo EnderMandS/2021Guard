@@ -20,6 +20,8 @@
 #include "usart.h"
 #include <math.h>
 #include "caninfo.h"
+#include "Gimbal.h"
+
 #define ABS(x) ((x > 0) ? x : -x)
 /*参数初始化--------------------------------------------------------------*/
 static void pid_param_init(
@@ -118,9 +120,9 @@ void pid_init(PID_TypeDef *pid)
 
 //imu.wz是Yaw的速度，imu.wx是Pitch的速度，imu.wy是rol的速度
 
-float PitchOPIDP = 0;
+float PitchOPIDP = 5;
 float PitchOPIDI = 0;
-float PitchOPIDD = 0;
+float PitchOPIDD = 10;
 float PitchOPIDCurrentError = 0;
 float PitchOPIDLastError = 0;
 float PitchOPIDIMax = 0;
@@ -128,9 +130,9 @@ float PitchOPIDPIDMax = 15000;
 float PitchOPIDPout, PitchOPIDIout, PitchOPIDDout;
 float PitchOPIDPIDout;
 
-float PitchIPIDP = 0;
+float PitchIPIDP = 150;
 float PitchIPIDI = 0;
-float PitchIPIDD = 0;
+float PitchIPIDD = 10;
 float PitchIPIDCurrentError = 0;
 float PitchIPIDLastError = 0;
 float PitchIPIDIMax = 0;
@@ -139,7 +141,7 @@ float PitchIPIDPout, PitchIPIDIout, PitchIPIDDout;
 float PitchIPIDPIDout;
 float PitchCurrentTick, PitchLastTick;
 
-float YawOPIDP = 0;
+float YawOPIDP = 5;
 float YawOPIDI = 0;
 float YawOPIDD = 0;
 float YawOPIDCurrentError = 0;
@@ -150,7 +152,7 @@ float YawOPIDPIDMax = 500;
 float YawOPIDPout, YawOPIDIout, YawOPIDDout;
 float YawOPIDPIDout;
 
-float YawIPIDP = 0;
+float YawIPIDP = 200;
 float YawIPIDI = 0;
 float YawIPIDD = 0;
 float YawIPIDCurrentError = 0;
@@ -164,7 +166,7 @@ float YawCurrentTick, YawLastTick;
 float Control_YawPID(float Target)
 {
 	/***************************************	外环角度环	******************************************/
-	float Angle_now = gear_motor_data[Gimbal_Y].angle * Motor_Ecd_to_Ang;
+	float Angle_now = Yaw_Motor_Angle_Change();
 
 	YawOPIDCurrentError = (Target - Angle_now) ;
 	if(fabs(YawOPIDCurrentError)>180)

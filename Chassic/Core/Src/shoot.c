@@ -29,7 +29,7 @@ void gear_moto_position_pid_init(void)
 	
 	//ËÙ¶È»·Init
 	pid_init(&Cartridge_wheel);
-  Cartridge_wheel.f_param_init(&Cartridge_wheel,PID_Speed,10000,5000,10,0,2700,0,1.3,0.05,0);
+  Cartridge_wheel.f_param_init(&Cartridge_wheel,PID_Speed,10000,10000,10,0,2700,0,1.3,0.05,0);
 }
 float gear_moto_position_pid_calc(gear_moto_position_pid *pid_out,gear_moto_position_pid *pid_in,float target,float now_angle,int16_t feeback_rpm)
 {

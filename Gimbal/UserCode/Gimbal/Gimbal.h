@@ -24,5 +24,7 @@ void Gimbal_Sotf_Start(void);
 void Gimbal_Remote_Control(void);
 void Gimbal_Automatic_control(void);
 void Gimbal_Inspect(void);
+float Yaw_Motor_Angle_Change(void);
+float Limit_Zero_To_360(float Input);
 
 #endif

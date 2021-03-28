@@ -10,9 +10,10 @@
 #include "Remote_control.h"
 #include "Filter.h"
 #include "pid.h"
+#include <math.h>
 
 #define Pitch_Limit_Top			131
-#define Pitch_Limit_Bottom	48
+#define Pitch_Limit_Bottom	72.5f
 
 #define Inspect_Empty				3
 #define Pitch_Inspect_Speed	1
@@ -71,13 +72,13 @@ void Gimbal_Sotf_Start(void)
         }
         if (pitch_angle < pitch_center)
         {
-            pitch_angle += 0.01f;
+            pitch_angle += 0.05f;
         }
         else if (pitch_angle > pitch_center)
         {
-            pitch_angle -= 0.01f;
+            pitch_angle -= 0.05f;
         }
-        if ((pitch_angle < pitch_center + 1 && pitch_angle > pitch_center - 1) ) //&& (yaw_angle < yaw_center + 1 && yaw_angle > yaw_center - 1))
+        if ((pitch_angle < pitch_center + 1 && pitch_angle > pitch_center - 1) )
         {
             remote_control_allow = 1;
             sotf_start = 0;
@@ -98,21 +99,15 @@ void Gimbal_Remote_Control(void)
         pitch_angle += 0.0005f * first_order_filter_Y_cali(remote_control.ch4);
         yaw_angle += -0.001f * first_order_filter_X_cali(remote_control.ch3);
     }
-//    yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
+		yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
     yaw = Control_YawPID(yaw_angle);
     Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
     pitch = Control_PitchPID(pitch_angle);
 }
 
-/**
- * @brief: 自瞄控制
- * @param {*}
- * @retval: 
- * @attention: 
- */
 void Gimbal_Automatic_control(void)
 {
-//    yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
+    yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
     yaw = Control_YawPID(yaw_angle);
 		Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
     pitch = Control_PitchPID(pitch_angle);
@@ -133,4 +128,15 @@ void Gimbal_Inspect(void)	//巡检
 		
 	yaw = Control_YawPID(yaw_angle);
 	pitch = Control_PitchPID(pitch_angle);
+}
+
+float Yaw_Motor_Angle_Change(void)
+{
+	float Back=0;
+	int Round=gear_motor_data[Gimbal_Y].round_cnt%2;
+	if( Round==0 )
+		Back=gear_motor_data[Gimbal_Y].angle * Motor_Ecd_to_Ang /2.f;
+	else if( Round==1 || Round==-1 )
+		Back=gear_motor_data[Gimbal_Y].angle * Motor_Ecd_to_Ang /2.f + 180.f;
+	return Back;
 }

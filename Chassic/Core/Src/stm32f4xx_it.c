@@ -286,7 +286,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	}
 	else
 	{
-		direction=0;
 		motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,0);
 		for(uint8_t i=0; i<2; ++i)
 		{
@@ -342,20 +341,18 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		default:	//Load
 			if(Switch_State[1]==0)
 			{
-				Cartridge_wheel_PID_Calc(1000);
-				Motor_Output[Cartridge]=Cartridge_wheel.output;
+//				Cartridge_wheel_PID_Calc(1000);
+//				Motor_Output[Cartridge]=Cartridge_wheel.output;
 			}
 			else
 			{
 				Cartridge_wheel_PID_Calc(0);
-				Motor_Output[Cartridge]=Cartridge_wheel.output;
+				Motor_Output[Cartridge]=0;
 			}
 		break;
 	}
 	
 	CAN_Motor_Ctrl(&hcan2,Motor_Output);
-	for(uint8_t i=0; i<12; ++i)
-		Motor_Output[i]=0;
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
 }
 

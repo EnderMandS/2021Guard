@@ -47,7 +47,6 @@ int control_mode = 0; //控制模式0为保护模式，1为手控模式，2为自瞄模式
 int Cartridge_output;
 int set_spd_to_Classis_wheel;
 
-//#define Classic_Move
 #define touch_Left -1
 #define touch_Right 1
 int direction=1;
@@ -66,8 +65,6 @@ uint16_t Change_Dir_Cnt=0;
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-//#define Classic_Move_Speed 700
-//#define Firc_Speed -1000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -78,7 +75,7 @@ uint16_t Change_Dir_Cnt=0;
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 int Classic_Move_Speed=700;
-int Firc_Speed=-1000;
+int Firc_Speed=-1500;
 uint16_t Cartridge_angle=0;
 uint32_t Cartridge_TIM_cnt=0;
 /* USER CODE END PV */
@@ -305,8 +302,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
 			if(remote_control.switch_left==1)
 				Chassic_State=1;
-//			Gimbal_Automatic_control();
-			Gimbal_Inspect();
+			Gimbal_Automatic_control();
+//			Gimbal_Inspect();
 			switch(view_shoot_mode)	//拨弹	DD:不响应 EE:低速发射 FF:高速发射	
 			{
 				case 0xEE:	//低速
@@ -324,13 +321,13 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			Shoot_Speed_Pid_Calc(Firc_Speed);	//摩擦轮
 		}
 		break;
-		 
 		case 3:	//遥控
 		{
 			Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
 			Gimbal_Sotf_Start();
 			Gimbal_Remote_Control();
 			if(sotf_start==0)		//等待云台缓起完成
+			if(1)
 			{
 				switch(remote_control.switch_left)	//左拨杆
 				{
@@ -362,6 +359,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						Shoot_Ctrl=0;
 						Chassic_State=0;
 						Shoot_Speed_Pid_Calc(0);	//摩擦轮
+						Motor_Output[Fric_1]=Motor_Output[Fric_2]=0;
 					}
 					break;
 				}
@@ -375,6 +373,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			remote_control_allow = 0;
 			sotf_start = 1;
 			Shoot_Speed_Pid_Calc(0);	//摩擦轮
+			Motor_Output[Fric_1]=Motor_Output[Fric_2]=0;
 			Shoot_Ctrl=0;
 			Chassic_State=0;
 		}
@@ -407,6 +406,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	CAN_Motor_Ctrl(&hcan1,Motor_Output);
 	for(uint8_t i=0; i<12; ++i)
 		Motor_Output_State[i]=0;
+	Chassic_State=Shoot_Ctrl=0;
 	
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
 }

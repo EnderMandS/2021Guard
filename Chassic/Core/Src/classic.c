@@ -17,7 +17,6 @@ int eliminate_dithering_left = 0;
 int eliminate_dithering_right = 0;
 int Classic_Move_Speed=1000;
 
-
 void Chassis_init(void)
 {
 	for(int j=0;j<2;j++)
