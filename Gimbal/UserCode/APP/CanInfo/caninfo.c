@@ -156,7 +156,7 @@ void CAN_Motor_Ctrl(CAN_HandleTypeDef *hcan, int16_t Motor_Data[12])
 	uint32_t send_mail_box;
 	uint16_t Std_ID[3]={0x200,0x1FF,0x2FF};
 	
-	for(uint8_t i=0; i<2; ++i)	//没用到，改成2
+	for(uint8_t i=0; i<3; ++i)	//没用到，改成2
 	{
 		can_tx_message.StdId = Std_ID[i];
 		can_send_data[0] = Motor_Data[4*i] >> 8;

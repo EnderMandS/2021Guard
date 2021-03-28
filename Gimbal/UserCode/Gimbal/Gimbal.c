@@ -10,12 +10,21 @@
 #include "Remote_control.h"
 #include "Filter.h"
 #include "pid.h"
+
+#define Pitch_Limit_Top			131
+#define Pitch_Limit_Bottom	48
+
+#define Inspect_Empty				3
+#define Pitch_Inspect_Speed	1
+#define Yaw_Inspect_Speed		1
+
 int32_t pitch, yaw;
 float yaw_angle;
 float pitch_angle;
 int sotf_start = 1;
 int remote_control_allow = 0;
 int read_allow = 0;
+int Pitch_dir=1;
 
 //循环限幅函数
 float	loop_fp32_constrain(float Input, float minValue, float maxValue)
@@ -68,14 +77,6 @@ void Gimbal_Sotf_Start(void)
         {
             pitch_angle -= 0.01f;
         }
-//        if (yaw_angle < yaw_center)
-//        {
-//            yaw_angle += 0.01f;
-//        }
-//        else if (yaw_angle > yaw_center)
-//        {
-//            yaw_angle -= 0.01f;
-//        }
         if ((pitch_angle < pitch_center + 1 && pitch_angle > pitch_center - 1) ) //&& (yaw_angle < yaw_center + 1 && yaw_angle > yaw_center - 1))
         {
             remote_control_allow = 1;
@@ -97,9 +98,9 @@ void Gimbal_Remote_Control(void)
         pitch_angle += 0.0005f * first_order_filter_Y_cali(remote_control.ch4);
         yaw_angle += -0.001f * first_order_filter_X_cali(remote_control.ch3);
     }
-    yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
+//    yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
     yaw = Control_YawPID(yaw_angle);
-    Limit(pitch_angle, 48, 131);		//48.5	131.5
+    Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
     pitch = Control_PitchPID(pitch_angle);
 }
 
@@ -111,8 +112,25 @@ void Gimbal_Remote_Control(void)
  */
 void Gimbal_Automatic_control(void)
 {
-    yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
+//    yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
     yaw = Control_YawPID(yaw_angle);
-		Limit(pitch_angle, 48, 131);		//1100 3000
+		Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
     pitch = Control_PitchPID(pitch_angle);
+}
+
+void Gimbal_Inspect(void)	//巡检
+{
+	if(Pitch_dir==1)
+		if(pitch_angle>=Pitch_Limit_Top-Inspect_Empty)
+			Pitch_dir=-1;
+		
+	if(Pitch_dir==-1)
+		if(pitch_angle<=Pitch_Limit_Bottom+Inspect_Empty)
+			Pitch_dir=1;
+		
+	pitch_angle += Pitch_dir*Pitch_Inspect_Speed;
+	yaw_angle += Yaw_Inspect_Speed;
+		
+	yaw = Control_YawPID(yaw_angle);
+	pitch = Control_PitchPID(pitch_angle);
 }

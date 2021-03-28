@@ -60,9 +60,9 @@ float gear_moto_position_pid_calc(gear_moto_position_pid *pid_out,gear_moto_posi
 }
 void Shoot_Speed_Pid_Init()
 {
-	pid_init(&Cartridge_wheel);
-  Cartridge_wheel.f_param_init(&Cartridge_wheel,PID_Speed,10000,5000,10,0,2700,0,1.3,0.05,0);
-	for(uint8_t i=0 ;i<2;i++)
+//	pid_init(&Cartridge_wheel);
+//  Cartridge_wheel.f_param_init(&Cartridge_wheel,PID_Speed,10000,5000,10,0,2700,0,1.3,0.05,0);
+	for(uint8_t i=0; i<2; i++)
 	{
 		pid_init(&Fric_wheel[i]);
 		Fric_wheel[i].f_param_init(&Fric_wheel[i],PID_Speed,13926,5000,10,0,8000,0,1.5,0.1,0);

@@ -19,7 +19,6 @@ typedef enum
 }Motor_Data_ID;
 
 extern uint8_t Move_Allow;
-extern uint8_t Classic_First_Start;
 extern int direction;
 extern int eliminate_dithering_left;
 extern int eliminate_dithering_right;

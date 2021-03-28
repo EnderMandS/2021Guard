@@ -118,46 +118,46 @@ void pid_init(PID_TypeDef *pid)
 
 //imu.wz是Yaw的速度，imu.wx是Pitch的速度，imu.wy是rol的速度
 
-float PitchOPIDP = 45;	  //55
+float PitchOPIDP = 0;
 float PitchOPIDI = 0;
-float PitchOPIDD = 65;	  //45
+float PitchOPIDD = 0;
 float PitchOPIDCurrentError = 0;
 float PitchOPIDLastError = 0;
 float PitchOPIDIMax = 0;
-float PitchOPIDPIDMax = 15000; //500
+float PitchOPIDPIDMax = 15000;
 float PitchOPIDPout, PitchOPIDIout, PitchOPIDDout;
 float PitchOPIDPIDout;
 
-float PitchIPIDP = 35; //40
+float PitchIPIDP = 0;
 float PitchIPIDI = 0;
-float PitchIPIDD = 5; //5
+float PitchIPIDD = 0;
 float PitchIPIDCurrentError = 0;
 float PitchIPIDLastError = 0;
 float PitchIPIDIMax = 0;
-float PitchIPIDPIDMax = 30000; //3000
+float PitchIPIDPIDMax = 30000;
 float PitchIPIDPout, PitchIPIDIout, PitchIPIDDout;
 float PitchIPIDPIDout;
 float PitchCurrentTick, PitchLastTick;
 
-float YawOPIDP = 30; //15
+float YawOPIDP = 0;
 float YawOPIDI = 0;
 float YawOPIDD = 0;
 float YawOPIDCurrentError = 0;
 float YawOPIDLastError = 0;
 float YawOPIDLastTick = 0;
 float YawOPIDIMax = 0;
-float YawOPIDPIDMax = 500; //300
+float YawOPIDPIDMax = 500;
 float YawOPIDPout, YawOPIDIout, YawOPIDDout;
 float YawOPIDPIDout;
 
-float YawIPIDP = 1800;
-float YawIPIDI = 2;
-float YawIPIDD = -300;
+float YawIPIDP = 0;
+float YawIPIDI = 0;
+float YawIPIDD = 0;
 float YawIPIDCurrentError = 0;
 float YawIPIDLastError = 0;
 float YawIPIDLastTick = 0;
 float YawIPIDIMax = 0;
-float YawIPIDPIDMax = 24650; //3000
+float YawIPIDPIDMax = 24650;
 float YawIPIDPout, YawIPIDIout, YawIPIDDout;
 float YawIPIDPIDout;
 float YawCurrentTick, YawLastTick;

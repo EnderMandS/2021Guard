@@ -109,10 +109,9 @@ int main(void)
 	Bsp_UART_Receive_IT(&huart3,UART_Buffer,36);   //启动串口接收//遥控
 	Bsp_UART_Receive_IT(&huart1, View_Buf, VIEW_BUF_LEN); //视觉
 	Bsp_UART_Receive_IT(&huart6,Judgement_Buf,JUDGEMENT_BUF_LEN); //裁判系统
-//	Chassis_init();
-	gear_moto_position_pid_init();
-//	Shoot_Speed_Pid_Init();
-	HAL_Delay(1000);
+//	gear_moto_position_pid_init();
+	Shoot_Speed_Pid_Init();
+	HAL_Delay(3000);
 	HAL_TIM_Base_Start_IT(&htim1);
   /* USER CODE END 2 */
 

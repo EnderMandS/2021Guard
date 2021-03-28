@@ -286,7 +286,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	}
 	else
 	{
-		Classic_First_Start=1;
 		direction=0;
 		motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,0);
 		for(uint8_t i=0; i<2; ++i)
@@ -330,7 +329,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		case 3:		//Fast
 			if(Heat_Rest>50)
 			{
-				Cartridge_wheel_PID_Calc(2000);
+				Cartridge_wheel_PID_Calc(1500);
 				Motor_Output[Cartridge]=Cartridge_wheel.output;
 			}
 			else

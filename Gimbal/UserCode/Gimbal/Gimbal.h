@@ -19,8 +19,10 @@ extern int read_allow;
 extern int32_t pitch ,yaw ;
 extern float yaw_nowangle;
 extern float pit_nowangle;
+
 void Gimbal_Sotf_Start(void);
 void Gimbal_Remote_Control(void);
 void Gimbal_Automatic_control(void);
+void Gimbal_Inspect(void);
 
 #endif

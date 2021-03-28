@@ -15,9 +15,8 @@ uint8_t Move_Allow=0;
 int direction=1;
 int eliminate_dithering_left = 0;
 int eliminate_dithering_right = 0;
-int Classic_Move_Speed=700;
+int Classic_Move_Speed=1000;
 
-uint8_t Classic_First_Start=1;	//·ÀÖ¹µ×ÅÌÍ£Ö¹ºóÖØÆô³é´¤
 
 void Chassis_init(void)
 {

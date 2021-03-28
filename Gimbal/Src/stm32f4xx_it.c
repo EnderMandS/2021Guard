@@ -305,7 +305,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
 			if(remote_control.switch_left==1)
 				Chassic_State=1;
-			Gimbal_Automatic_control();
+//			Gimbal_Automatic_control();
+			Gimbal_Inspect();
 			switch(view_shoot_mode)	//拨弹	DD:不响应 EE:低速发射 FF:高速发射	
 			{
 				case 0xEE:	//低速
@@ -374,7 +375,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			remote_control_allow = 0;
 			sotf_start = 1;
 			Shoot_Speed_Pid_Calc(0);	//摩擦轮
-			Cartridge_wheel_PID_Calc(0);	//拨弹
 			Shoot_Ctrl=0;
 			Chassic_State=0;
 		}
@@ -383,36 +383,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		default:
 			break;
 	}
-
-	#ifdef Classic_Move
-		uint8_t Moto_ID[2]={Chassic_L,Chassic_R};
-		if(Motor_Output_State[Chassic_L]==1 && Motor_Output_State[Chassic_R]==1)
-		{
-			if(Classic_First_Start)
-			{
-				Classic_First_Start=0;
-				if(direction==0)
-					direction=1;
-			}
-			motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed);
-			for (uint8_t i=0; i<2; i++)
-			{
-				motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm); //根据设定值进行PID计算。
-				Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
-			}
-		}
-		else
-		{
-			Classic_First_Start=1;
-			direction=0;
-			motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,0);
-			for(uint8_t i=0; i<2; ++i)
-			{
-				motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
-				Motor_Output[ Moto_ID[i] ]=0;
-			}
-		}
-	#endif
 	
 	if(Motor_Output_State[Gimbal_Y]==1)
 		Motor_Output[Gimbal_Y]=yaw;
@@ -436,7 +406,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	Chassic_Ctrl(Chassic_Data,3);
 	CAN_Motor_Ctrl(&hcan1,Motor_Output);
 	for(uint8_t i=0; i<12; ++i)
-		Motor_Output[i]=Motor_Output_State[i]=0;
+		Motor_Output_State[i]=0;
 	
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
 }

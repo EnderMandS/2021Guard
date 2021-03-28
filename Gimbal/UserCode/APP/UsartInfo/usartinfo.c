@@ -63,35 +63,12 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 				default:
 					break;
 			}
-			
-//			if (rx_view_buf[1] == 0xAA)//命令位 
-//			{
-//				view_send_state = 1;
-//			}
-//			else if (rx_view_buf[1] == 0xBB)
-//			{
-//				view_send_state = 2;
-//				extern_view_send_state = 1;
-//			}
-//			else if (rx_view_buf[1] == 0xCC)
-//			{
-//				view_send_state = 3;
-//				view_shoot_mode = rx_view_buf[2];
-//			}
-//				for(int i = 0;i<13;i++)
-//				{
-//					sum += rx_view_buf[i];
-//				}
-//				if(rx_view_buf[13] != sum)
-//				{
-//					return;
-//				}
 			memcpy(pitchangle.c, rx_view_buf + 3, 4);
 			memcpy(yawangle.c, rx_view_buf + 7, 4);
 			if (remote_control.switch_right==1 && view_send_state==3 )
 			{
-					pitch_angle = pitchangle.f;   
-					yaw_angle = yawangle.f;   
+				pitch_angle = pitchangle.f;   
+				yaw_angle = yawangle.f;   
 			}
 		}
 	}
