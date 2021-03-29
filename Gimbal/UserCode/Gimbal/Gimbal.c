@@ -12,12 +12,12 @@
 #include "pid.h"
 #include <math.h>
 
-#define Pitch_Limit_Top			131
+#define Pitch_Limit_Top			131.f
 #define Pitch_Limit_Bottom	72.5f
 
 #define Inspect_Empty				3
-#define Pitch_Inspect_Speed	1
-#define Yaw_Inspect_Speed		1
+#define Pitch_Inspect_Speed	0.3f
+#define Yaw_Inspect_Speed		0.3f
 
 int32_t pitch, yaw;
 float yaw_angle;
@@ -125,7 +125,7 @@ void Gimbal_Inspect(void)	//巡检
 		
 	pitch_angle += Pitch_dir*Pitch_Inspect_Speed;
 	yaw_angle += Yaw_Inspect_Speed;
-		
+	yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
 	yaw = Control_YawPID(yaw_angle);
 	pitch = Control_PitchPID(pitch_angle);
 }

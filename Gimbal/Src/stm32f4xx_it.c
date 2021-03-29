@@ -302,8 +302,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
 			if(remote_control.switch_left==1)
 				Chassic_State=1;
-			Gimbal_Automatic_control();
-//			Gimbal_Inspect();
+//			Gimbal_Automatic_control();
+			Gimbal_Inspect();
 			switch(view_shoot_mode)	//拨弹	DD:不响应 EE:低速发射 FF:高速发射	
 			{
 				case 0xEE:	//低速
@@ -321,6 +321,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			Shoot_Speed_Pid_Calc(Firc_Speed);	//摩擦轮
 		}
 		break;
+		
 		case 3:	//遥控
 		{
 			Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
