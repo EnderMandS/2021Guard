@@ -141,7 +141,7 @@ float PitchIPIDPout, PitchIPIDIout, PitchIPIDDout;
 float PitchIPIDPIDout;
 float PitchCurrentTick, PitchLastTick;
 
-float YawOPIDP = 5;
+float YawOPIDP = 200;
 float YawOPIDI = 0;
 float YawOPIDD = 0;
 float YawOPIDCurrentError = 0;
@@ -152,14 +152,14 @@ float YawOPIDPIDMax = 500;
 float YawOPIDPout, YawOPIDIout, YawOPIDDout;
 float YawOPIDPIDout;
 
-float YawIPIDP = 200;
+float YawIPIDP = 500;
 float YawIPIDI = 0;
 float YawIPIDD = 0;
 float YawIPIDCurrentError = 0;
 float YawIPIDLastError = 0;
 float YawIPIDLastTick = 0;
 float YawIPIDIMax = 0;
-float YawIPIDPIDMax = 24650;
+float YawIPIDPIDMax = 30000;
 float YawIPIDPout, YawIPIDIout, YawIPIDDout;
 float YawIPIDPIDout;
 float YawCurrentTick, YawLastTick;

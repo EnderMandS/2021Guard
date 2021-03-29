@@ -292,7 +292,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
-	yaw_nowangle = gear_motor_data[Gimbal_Y].angle * Motor_Ecd_to_Ang;
+	yaw_nowangle = Yaw_Motor_Angle_Change();
 	pit_nowangle = gear_motor_data[Gimbal_P].angle * Motor_Ecd_to_Ang;
 	
 	switch(remote_control.switch_right)	//”“≤¶∏À

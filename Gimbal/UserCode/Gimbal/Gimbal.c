@@ -67,7 +67,7 @@ void Gimbal_Sotf_Start(void)
         if (read_allow == 0)
         {
             pitch_angle = gear_motor_data[Gimbal_P].angle * Motor_Ecd_to_Ang;
-            yaw_angle = gear_motor_data[Gimbal_Y].angle * Motor_Ecd_to_Ang;
+            yaw_angle = gear_motor_data[Gimbal_Y].angle * Motor_Ecd_to_Ang/2.f;
             read_allow = 1;
         }
         if (pitch_angle < pitch_center)
@@ -97,7 +97,7 @@ void Gimbal_Remote_Control(void)
     if (remote_control_allow == 1)
     {
         pitch_angle += 0.0005f * first_order_filter_Y_cali(remote_control.ch4);
-        yaw_angle += -0.001f * first_order_filter_X_cali(remote_control.ch3);
+        yaw_angle += 0.001f * first_order_filter_X_cali(remote_control.ch3);
     }
 		yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
     yaw = Control_YawPID(yaw_angle);
