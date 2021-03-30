@@ -53,7 +53,6 @@ uint8_t Send_Position_Buf[10];
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -61,7 +60,6 @@ uint8_t Send_Position_Buf[10];
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -111,7 +109,6 @@ int main(void)
 	Bsp_UART_Receive_IT(&huart6,Judgement_Buf,JUDGEMENT_BUF_LEN); //≤√≈–œµÕ≥
 //	gear_moto_position_pid_init();
 	Shoot_Speed_Pid_Init();
-	HAL_Delay(3000);
 	HAL_TIM_Base_Start_IT(&htim1);
   /* USER CODE END 2 */
 

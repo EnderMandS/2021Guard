@@ -11,6 +11,7 @@
 #include "Filter.h"
 #include "pid.h"
 #include <math.h>
+#include "usartinfo.h"
 
 #define Pitch_Limit_Top			131.f
 #define Pitch_Limit_Bottom	72.5f
@@ -67,7 +68,7 @@ void Gimbal_Sotf_Start(void)
         if (read_allow == 0)
         {
             pitch_angle = gear_motor_data[Gimbal_P].angle * Motor_Ecd_to_Ang;
-            yaw_angle = gear_motor_data[Gimbal_Y].angle * Motor_Ecd_to_Ang/2.f;
+            yaw_angle = Yaw_Motor_Angle_Change();
             read_allow = 1;
         }
         if (pitch_angle < pitch_center)
@@ -107,10 +108,15 @@ void Gimbal_Remote_Control(void)
 
 void Gimbal_Automatic_control(void)
 {
+	if(view_send_state==3)	//1:None	2:Send angle	3:View
+	{
     yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
     yaw = Control_YawPID(yaw_angle);
 		Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
     pitch = Control_PitchPID(pitch_angle);
+	}
+	else
+		Gimbal_Inspect();
 }
 
 void Gimbal_Inspect(void)	//巡检

@@ -170,29 +170,3 @@ void CAN_Motor_Ctrl(CAN_HandleTypeDef *hcan, int16_t Motor_Data[12])
 		HAL_CAN_AddTxMessage(hcan, &can_tx_message, can_send_data, &send_mail_box);
 	}
 }
-/**
-* @brief: 上电等待电机全部连接
- * @param {void} 
- * @retval: 计次5
- * @attention: 
- */
-void Wait_For_Motor(void)
-{
-	while(1)
-	{
-		if( Wait_For_Motor_Cnt[0]>5 )
-			break;
-	}
-	while(1)
-	{
-		if( Wait_For_Motor_Cnt[Chassic_R]>5)
-			break;
-	}
-	while( Wait_For_Motor_Cnt[Chassic_R]<5 ){}
-	while( Wait_For_Motor_Cnt[Cartridge]<5 );
-	while( Wait_For_Motor_Cnt[Gimbal_Y]	<5 );
-	while( Wait_For_Motor_Cnt[Gimbal_P]	<5 );
-	while( Wait_For_Motor_Cnt[Fric_1]		<5 );
-	while( Wait_For_Motor_Cnt[Fric_2]		<5 );
-	Wait_For_Motor_State=0;
-}

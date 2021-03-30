@@ -103,7 +103,6 @@ int main(void)
 	CAN_Filter_Init();
 	Chassis_init();
 	gear_moto_position_pid_init();
-	HAL_Delay(1000);
 	HAL_TIM_Base_Start_IT(&htim1);
   /* USER CODE END 2 */
 

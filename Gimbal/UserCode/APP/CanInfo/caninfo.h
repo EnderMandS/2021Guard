@@ -58,6 +58,5 @@ void get_gear_motor_measure(gear_moto_measure_t *ptr, uint8_t rxd[]);
 void get_motor_measure(gear_moto_measure_t *ptr, uint8_t rxd[]);
 void CAN_Send_CMD(CAN_HandleTypeDef *hcan, int StdID, int16_t motor1, int16_t motor2, int16_t motor3, int16_t motor4);
 void CAN_Motor_Ctrl(CAN_HandleTypeDef *hcan, int16_t Motor_Data[12]);
-void Wait_For_Motor(void);
 
 #endif

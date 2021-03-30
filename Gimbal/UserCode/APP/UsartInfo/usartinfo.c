@@ -12,7 +12,7 @@
 #include "judge.h"
 #include "Gimbal.h"
 //#include "gimbal.h"
-int view_send_state;
+uint8_t view_send_state;
 uint8_t Judgement_Buf[JUDGEMENT_BUF_LEN];
 uint8_t View_Buf[VIEW_BUF_LEN];
 uint8_t rx_view_buf[24];
@@ -24,8 +24,7 @@ float2uchar yawangle;
 float2uchar send_pitch;
 float2uchar send_yaw;
 frame_judge save_frame_id_message[10] = {0};
-int extern_view_send_state = 0;
-
+uint8_t extern_view_send_state = 0;
 
 /**
   * @brief  串口空闲中断DMA接收回调函数
@@ -57,7 +56,12 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 				
 				case 0xCC:
 					view_send_state = 3;
-					view_shoot_mode = rx_view_buf[2];
+					view_shoot_mode = rx_view_buf[2];	//射击指令
+					if(remote_control.switch_right==1)
+					{
+						pitch_angle = pitchangle.f;   
+						yaw_angle = yawangle.f; 
+					}
 					break;
 				
 				default:
@@ -65,11 +69,11 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 			}
 			memcpy(pitchangle.c, rx_view_buf + 3, 4);
 			memcpy(yawangle.c, rx_view_buf + 7, 4);
-			if (remote_control.switch_right==1 && view_send_state==3 )
-			{
-				pitch_angle = pitchangle.f;   
-				yaw_angle = yawangle.f;   
-			}
+//			if (remote_control.switch_right==1 && view_send_state==3 )
+//			{
+//				 pitch_angle = pitchangle.f;   
+//				yaw_angle = yawangle.f; 
+//			}
 		}
 	}
 	//裁判系统串口
@@ -79,7 +83,6 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 		Judge_Read_Data(Judgement_Buf);
 	}
 }
-
 
 /**
  * @brief: 串口7发送函数

@@ -15,7 +15,7 @@ extern uint8_t Judgement_Buf[];
 extern uint8_t View_Buf[];
 extern uint8_t UART_Buffer[36];
 extern uint8_t view_shoot_mode ;
-extern int view_send_state;
+extern uint8_t view_send_state;
 typedef struct
 {
 	float pitch;
@@ -33,7 +33,7 @@ typedef union
  float f;
  uint8_t c[4];
 } float2uchar;
-extern int extern_view_send_state;
+extern uint8_t extern_view_send_state;
 extern float2uchar send_pitch;
 extern float2uchar send_yaw;
 

@@ -78,6 +78,8 @@ int Classic_Move_Speed=700;
 int Firc_Speed=-1500;
 uint16_t Cartridge_angle=0;
 uint32_t Cartridge_TIM_cnt=0;
+
+uint8_t Motor_Power_Up=0;	//判断电机上电
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -292,123 +294,132 @@ void TIM1_UP_TIM10_IRQHandler(void)
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
-	yaw_nowangle = Yaw_Motor_Angle_Change();
-	pit_nowangle = gear_motor_data[Gimbal_P].angle * Motor_Ecd_to_Ang;
-	
-	switch(remote_control.switch_right)	//右拨杆
+	if(Motor_Power_Up==0)
 	{
-		case 1:	//自瞄
-		{
-			Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
-			if(remote_control.switch_left==1)
-				Chassic_State=1;
-//			Gimbal_Automatic_control();
-			Gimbal_Inspect();
-			switch(view_shoot_mode)	//拨弹	DD:不响应 EE:低速发射 FF:高速发射	
-			{
-				case 0xEE:	//低速
-					Shoot_Ctrl=2;
-					break;
-				
-				case 0xFF:	//高速
-					Shoot_Ctrl=3;
-					break;
-				
-				default:		//不发射
-					Shoot_Ctrl=0;
-					break;
-			}
-			Shoot_Speed_Pid_Calc(Firc_Speed);	//摩擦轮
-		}
-		break;
+		if(	gear_motor_data[Gimbal_Y].real_current!=0 &&
+				gear_motor_data[Gimbal_P].real_current!=0 &&
+				gear_motor_data[Fric_1].real_current!=0 	&&
+				gear_motor_data[Fric_2].real_current!=0		)
+			Motor_Power_Up=1;
+	}
+	else
+	{
+		yaw_nowangle = Yaw_Motor_Angle_Change();
+		pit_nowangle = gear_motor_data[Gimbal_P].angle * Motor_Ecd_to_Ang;
 		
-		case 3:	//遥控
+		switch(remote_control.switch_right)	//右拨杆
 		{
-			Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
-			Gimbal_Sotf_Start();
-			Gimbal_Remote_Control();
-			if(sotf_start==0)		//等待云台缓起完成
-			if(1)
+			case 1:	//自瞄
 			{
-				switch(remote_control.switch_left)	//左拨杆
+				Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
+				if(remote_control.switch_left==1)
+					Chassic_State=1;
+				Gimbal_Automatic_control();
+				switch(view_shoot_mode)	//拨弹	DD:不响应 EE:低速发射 FF:高速发射	
 				{
-					case 1:	//摩擦轮+拨弹+底盘
-					{
-						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
-						Shoot_Speed_Pid_Calc(Firc_Speed);	//摩擦轮
+					case 0xEE:	//高速
+						Shoot_Ctrl=2;
+						break;
+					
+					case 0xFF:	//低速
 						Shoot_Ctrl=3;
-						Chassic_State=1;
-					}
-					break;
+						break;
 					
-					case 3:	//摩擦轮+定时位置环拨弹
-					{
-						Motor_Output_State[Chassic_L]=Motor_Output_State[Chassic_R]=Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
-						Shoot_Speed_Pid_Calc(Firc_Speed);	//摩擦轮
+					default:		//不发射
 						Shoot_Ctrl=0;
-						++Cartridge_TIM_cnt;
-						if(Cartridge_TIM_cnt>400)
+						break;
+				}
+				Shoot_Speed_Pid_Calc(Firc_Speed);	//摩擦轮
+			}
+			break;
+			
+			case 3:	//遥控
+			{
+				Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
+				Gimbal_Sotf_Start();
+				Gimbal_Remote_Control();
+				if(sotf_start==0)		//等待云台缓起完成
+				if(1)
+				{
+					switch(remote_control.switch_left)	//左拨杆
+					{
+						case 1:	//摩擦轮+拨弹+底盘
 						{
-							Cartridge_TIM_cnt=0;
-							Shoot_Ctrl=1;
+							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
+							Shoot_Speed_Pid_Calc(Firc_Speed);	//摩擦轮
+							Shoot_Ctrl=3;
+							Chassic_State=1;
 						}
+						break;
+						
+						case 3:	//摩擦轮+定时位置环拨弹
+						{
+							Motor_Output_State[Chassic_L]=Motor_Output_State[Chassic_R]=Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
+							Shoot_Speed_Pid_Calc(Firc_Speed);	//摩擦轮
+							Shoot_Ctrl=0;
+							++Cartridge_TIM_cnt;
+							if(Cartridge_TIM_cnt>400)
+							{
+								Cartridge_TIM_cnt=0;
+								Shoot_Ctrl=1;
+							}
+						}
+						break;
+						
+						case 2:	//无
+						{
+							Shoot_Ctrl=0;
+							Chassic_State=0;
+							Shoot_Speed_Pid_Calc(0);	//摩擦轮
+							Motor_Output[Fric_1]=Motor_Output[Fric_2]=0;
+						}
+						break;
 					}
-					break;
-					
-					case 2:	//无
-					{
-						Shoot_Ctrl=0;
-						Chassic_State=0;
-						Shoot_Speed_Pid_Calc(0);	//摩擦轮
-						Motor_Output[Fric_1]=Motor_Output[Fric_2]=0;
-					}
-					break;
 				}
 			}
-		}
-		break;
-		
-		case 2:	//无控制
-		{
-			read_allow = 0;
-			remote_control_allow = 0;
-			sotf_start = 1;
-			Shoot_Speed_Pid_Calc(0);	//摩擦轮
-			Motor_Output[Fric_1]=Motor_Output[Fric_2]=0;
-			Shoot_Ctrl=0;
-			Chassic_State=0;
-		}
-		break;
-		
-		default:
 			break;
+			
+			case 2:	//无控制
+			{
+				read_allow = 0;
+				remote_control_allow = 0;
+				sotf_start = 1;
+				Shoot_Speed_Pid_Calc(0);	//摩擦轮
+				Motor_Output[Fric_1]=Motor_Output[Fric_2]=0;
+				Shoot_Ctrl=0;
+				Chassic_State=0;
+			}
+			break;
+			
+			default:
+				break;
+		}
+		
+		if(Motor_Output_State[Gimbal_Y]==1)
+			Motor_Output[Gimbal_Y]=yaw;
+		
+		if(Motor_Output_State[Gimbal_P]==1)
+			Motor_Output[Gimbal_P]=pitch;
+		
+		if(Motor_Output_State[Fric_1]==1)
+			Motor_Output[Fric_1]=Fric_wheel[0].output;
+		
+		if(Motor_Output_State[Fric_2]==1)
+			Motor_Output[Fric_2]=Fric_wheel[1].output;
+		
+		uint8_t Switch_State=0;	//发送微动开关状态
+		if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9) == GPIO_PIN_RESET)
+			Switch_State=0;
+		else
+			Switch_State=1;
+		
+		uint8_t Chassic_Data[3]={Chassic_State,Shoot_Ctrl,Switch_State};
+		Chassic_Ctrl(Chassic_Data,3);
+		CAN_Motor_Ctrl(&hcan1,Motor_Output);
+		for(uint8_t i=0; i<12; ++i)
+			Motor_Output_State[i]=0;
+		Chassic_State=Shoot_Ctrl=0;
 	}
-	
-	if(Motor_Output_State[Gimbal_Y]==1)
-		Motor_Output[Gimbal_Y]=yaw;
-	
-	if(Motor_Output_State[Gimbal_P]==1)
-		Motor_Output[Gimbal_P]=pitch;
-	
-	if(Motor_Output_State[Fric_1]==1)
-		Motor_Output[Fric_1]=Fric_wheel[0].output;
-	
-	if(Motor_Output_State[Fric_2]==1)
-		Motor_Output[Fric_2]=Fric_wheel[1].output;
-	
-	uint8_t Switch_State=0;	//发送微动开关状态
-	if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9) == GPIO_PIN_RESET)
-		Switch_State=0;
-	else
-		Switch_State=1;
-	
-	uint8_t Chassic_Data[3]={Chassic_State,Shoot_Ctrl,Switch_State};
-	Chassic_Ctrl(Chassic_Data,3);
-	CAN_Motor_Ctrl(&hcan1,Motor_Output);
-	for(uint8_t i=0; i<12; ++i)
-		Motor_Output_State[i]=0;
-	Chassic_State=Shoot_Ctrl=0;
-	
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
 }
 
