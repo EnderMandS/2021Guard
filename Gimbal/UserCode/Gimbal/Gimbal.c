@@ -24,7 +24,7 @@ int32_t pitch, yaw;
 float yaw_angle;
 float pitch_angle;
 int sotf_start = 1;
-int remote_control_allow = 0;
+int control_allow = 0;
 int read_allow = 0;
 int Pitch_dir=1;
 
@@ -81,7 +81,7 @@ void Gimbal_Sotf_Start(void)
         }
         if ((pitch_angle < pitch_center + 1 && pitch_angle > pitch_center - 1) )
         {
-            remote_control_allow = 1;
+            control_allow = 1;
             sotf_start = 0;
         }
     }
@@ -95,7 +95,7 @@ void Gimbal_Sotf_Start(void)
  */
 void Gimbal_Remote_Control(void)
 {
-    if (remote_control_allow == 1)
+    if (control_allow == 1)
     {
         pitch_angle += 0.0005f * first_order_filter_Y_cali(remote_control.ch4);
         yaw_angle += 0.001f * first_order_filter_X_cali(remote_control.ch3);
@@ -108,15 +108,18 @@ void Gimbal_Remote_Control(void)
 
 void Gimbal_Automatic_control(void)
 {
-	if(view_send_state==3)	//1:None	2:Send angle	3:View
+	if(control_allow==1)
 	{
-    yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
-    yaw = Control_YawPID(yaw_angle);
-		Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
-    pitch = Control_PitchPID(pitch_angle);
+		if(Aimming==1)
+		{
+			yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
+			yaw = Control_YawPID(yaw_angle);
+			Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
+			pitch = Control_PitchPID(pitch_angle);
+		}
+		else
+			Gimbal_Inspect();
 	}
-	else
-		Gimbal_Inspect();
 }
 
 void Gimbal_Inspect(void)	//巡检

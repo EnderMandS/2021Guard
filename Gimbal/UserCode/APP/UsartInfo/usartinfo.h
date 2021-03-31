@@ -33,9 +33,11 @@ typedef union
  float f;
  uint8_t c[4];
 } float2uchar;
+
 extern uint8_t extern_view_send_state;
 extern float2uchar send_pitch;
 extern float2uchar send_yaw;
+extern uint8_t Aimming;
 
 void Uart1_TransmissionT_Data(uint8_t *p_data, uint32_t size);
 void Uart6_TransmissionT_Data(uint8_t *p_data, uint32_t size);

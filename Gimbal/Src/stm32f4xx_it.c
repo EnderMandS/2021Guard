@@ -314,6 +314,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
 				if(remote_control.switch_left==1)
 					Chassic_State=1;
+				Gimbal_Sotf_Start();
 				Gimbal_Automatic_control();
 				switch(view_shoot_mode)	//拨弹	DD:不响应 EE:低速发射 FF:高速发射	
 				{
@@ -339,7 +340,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				Gimbal_Sotf_Start();
 				Gimbal_Remote_Control();
 				if(sotf_start==0)		//等待云台缓起完成
-				if(1)
 				{
 					switch(remote_control.switch_left)	//左拨杆
 					{
@@ -352,26 +352,21 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						}
 						break;
 						
-						case 3:	//摩擦轮+定时位置环拨弹
+						case 3:	//摩擦轮
 						{
-							Motor_Output_State[Chassic_L]=Motor_Output_State[Chassic_R]=Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
+							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
 							Shoot_Speed_Pid_Calc(Firc_Speed);	//摩擦轮
 							Shoot_Ctrl=0;
-							++Cartridge_TIM_cnt;
-							if(Cartridge_TIM_cnt>400)
-							{
-								Cartridge_TIM_cnt=0;
-								Shoot_Ctrl=1;
-							}
+							Chassic_State=0;
 						}
 						break;
 						
 						case 2:	//无
 						{
+							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=0;
 							Shoot_Ctrl=0;
 							Chassic_State=0;
 							Shoot_Speed_Pid_Calc(0);	//摩擦轮
-							Motor_Output[Fric_1]=Motor_Output[Fric_2]=0;
 						}
 						break;
 					}
@@ -382,7 +377,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			case 2:	//无控制
 			{
 				read_allow = 0;
-				remote_control_allow = 0;
+				control_allow = 0;
 				sotf_start = 1;
 				Shoot_Speed_Pid_Calc(0);	//摩擦轮
 				Motor_Output[Fric_1]=Motor_Output[Fric_2]=0;
@@ -397,15 +392,23 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		
 		if(Motor_Output_State[Gimbal_Y]==1)
 			Motor_Output[Gimbal_Y]=yaw;
+		else
+			Motor_Output[Gimbal_Y]=0;
 		
 		if(Motor_Output_State[Gimbal_P]==1)
 			Motor_Output[Gimbal_P]=pitch;
+		else
+			Motor_Output[Gimbal_P]=0;
 		
 		if(Motor_Output_State[Fric_1]==1)
 			Motor_Output[Fric_1]=Fric_wheel[0].output;
+		else
+			Motor_Output[Fric_1]=0;
 		
 		if(Motor_Output_State[Fric_2]==1)
 			Motor_Output[Fric_2]=Fric_wheel[1].output;
+		else
+			Motor_Output[Fric_2]=0;
 		
 		uint8_t Switch_State=0;	//发送微动开关状态
 		if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9) == GPIO_PIN_RESET)

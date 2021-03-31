@@ -14,7 +14,7 @@
 extern float yaw_angle;
 extern float pitch_angle;
 extern int sotf_start;
-extern int remote_control_allow;
+extern int control_allow;
 extern int read_allow;
 extern int32_t pitch ,yaw ;
 extern float yaw_nowangle;
