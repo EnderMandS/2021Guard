@@ -81,12 +81,13 @@ void Gimbal_Receive(uint8_t Receive_Data[8])
 			Move_Allow=0;
 			break;
 	}
+	
 	switch( Receive_Data[1] )	//Shoot control
 	{
 		case 0x00:	//Stop
 		case 0x01:	//Single
-		case 0x02:	//Slow
-		case 0x03:	//Fast
+		case 0x02:	//Fast
+		case 0x03:	//Slow
 			Shoot_State=Receive_Data[1];
 			break;
 		
@@ -94,7 +95,23 @@ void Gimbal_Receive(uint8_t Receive_Data[8])
 			Shoot_State=0;
 			break;
 	}
+	
 	Switch_State[1]=Receive_Data[2];
+	
+	switch(Receive_Data[3])	// 0:Inspect  1:Aim
+	{
+		case 0:
+			Classic_Move_Speed=Classic_Middle;
+		break;
+		
+		case 1:
+			Classic_Move_Speed=Classic_Slow;
+		break;
+		
+		default:
+			break;
+	}
+		
 }
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {

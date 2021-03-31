@@ -2,9 +2,6 @@
 #include "pid.h"
 #include "math.h"
 
-#define Speed_Toggle_Time 200
-
-#define Buff_Time 500
 uint16_t Time_Cnt=0;
 int Last_Dir=0;
 
@@ -15,7 +12,9 @@ uint8_t Move_Allow=0;
 int direction=1;
 int eliminate_dithering_left = 0;
 int eliminate_dithering_right = 0;
-int Classic_Move_Speed=1000;
+int Classic_Move_Speed=Classic_Slow;
+uint8_t Aimming=0;
+int Chassic_Speed_Buf=0;
 
 void Chassis_init(void)
 {
@@ -32,6 +31,7 @@ void Chassis_init(void)
     set_spd[0] = 0;
     set_spd[1] = 0;
 }
+
 float Slow_Change_Speed(int dir, uint16_t Speed)
 {
 	if(dir!=Last_Dir)

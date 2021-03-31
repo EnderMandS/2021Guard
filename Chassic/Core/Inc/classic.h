@@ -4,6 +4,11 @@
 #include "main.h"
 #include "pid.h"
 
+#define Buff_Time 200
+#define Classic_Slow		1000
+#define Classic_Middle	1500
+#define Classic_Fast		2000
+
 #define Motor_Base 0x201
 typedef enum
 {
@@ -25,6 +30,8 @@ extern int eliminate_dithering_right;
 extern PID_TypeDef motor_pid[2];
 extern int Classic_Move_Speed;
 extern uint8_t Moto_ID[2];
+extern uint8_t Aimming;
+extern int Chassic_Speed_Buf;
 
 void Chassis_init(void);
 float Slow_Change_Speed(int dir, uint16_t Speed);

@@ -140,7 +140,6 @@ bool Judge_Read_Data(uint8_t *ReadFromUsart)
 					
 					case ID_power_heat_data:      		//0x0202 //实时功率热量
 						memcpy(&PowerHeatData, (ReadFromUsart + DATA), LEN_power_heat_data);
-						// Vcan_Send(PowerHeatData.shooter_heat0);
 					break;
 					
 					case ID_game_robot_pos:      		//0x0203 //机器人位置
@@ -158,7 +157,9 @@ bool Judge_Read_Data(uint8_t *ReadFromUsart)
 					case ID_robot_hurt:      			//0x0206 //伤害状态数据
 						memcpy(&RobotHurt, (ReadFromUsart + DATA), LEN_robot_hurt);
 						if(RobotHurt.hurt_type == 0)//非装甲板离线造成伤害
-						{	Hurt_Data_Update = TRUE;	}//装甲数据每更新一次则判定为受到一次伤害
+						{	//装甲数据每更新一次则判定为受到一次伤害
+							Hurt_Data_Update = TRUE;
+						}
 					break;
 					
 					case ID_shoot_data:      			//0x0207//实时射击数据

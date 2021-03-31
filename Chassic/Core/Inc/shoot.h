@@ -7,6 +7,10 @@
 #define OUT	0
 #define IN 	1
 
+#define Cartridge_Ultra	2000
+#define Cartridge_Fast	1500
+#define Cartridge_Slow	1000
+
 typedef struct
 {
 	float p;

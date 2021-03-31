@@ -30,6 +30,7 @@
 #include "judge.h"
 #include "bsp_usart.h"
 #include "bullet.h"
+#include "bsp_judge.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,7 +52,8 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 uint32_t Time_Tick=0;	//计时，一秒内没有收到云台数据停止动作
-uint8_t Motor_Power_Up=0;	//判断电机上电
+uint8_t Motor_Power_Up=0;	//判断电机上电，1上电完成
+uint8_t Shoot_Ultra_Mode=0;	//剩余热量多，高射速消耗热量，1有效
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -266,6 +268,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			Move_Allow=Shoot_State=0;
 			Switch_State[0]=Switch_State[1]=1;
 		}
+		
 		if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_RESET)
 		{
 			//左边检测到墙壁，开始反转
@@ -288,7 +291,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		
 		if(Move_Allow==1)
 		{
-			motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed);
+			motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed-Chassic_Speed_Buf);
 			for (uint8_t i=0; i<2; i++)
 			{
 				motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm); //根据设定值进行PID计算。
@@ -305,12 +308,16 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			}
 		}
 		
-		//剩余热量
-		int Heat_Rest=GameRobotStat.shooter_id1_17mm_cooling_limit-PowerHeatData.shooter_id1_17mm_cooling_heat;
+		int Heat_Rest=320-PowerHeatData.shooter_id1_17mm_cooling_heat;	//剩余热量
+		if(Heat_Rest>200)	//剩余热量多，高射频消耗热量
+			Shoot_Ultra_Mode=1;
+		else if(Heat_Rest<100)
+			Shoot_Ultra_Mode=0;
+		
 		switch(Shoot_State)	//射击模式
 		{
 			case 1:		//Single
-				if(Heat_Rest>10)
+				if(Heat_Rest>20)
 				{
 					Shoot_State=0;
 					Cartridge_angle=(Cartridge_angle+45)%360;
@@ -323,23 +330,20 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				}
 			break;
 			
-			case 2:		//Slow
-				if(Heat_Rest>30)
-				{
-					Cartridge_wheel_PID_Calc(1000);
-					Motor_Output[Cartridge]=Cartridge_wheel.output;
-				}
+			case 2:		//Fast
+				if(Shoot_Ultra_Mode==1)
+					Cartridge_wheel_PID_Calc(Cartridge_Ultra);
+				else if(Heat_Rest>50)
+					Cartridge_wheel_PID_Calc(Cartridge_Fast);
 				else
-				{
-					Cartridge_wheel_PID_Calc(0);
-					Motor_Output[Cartridge]=0;
-				}
+					Cartridge_wheel_PID_Calc(Cartridge_Slow);
+				Motor_Output[Cartridge]=Cartridge_wheel.output;
 			break;
 			
-			case 3:		//Fast
-				if(Heat_Rest>50)
+			case 3:		//Slow
+				if(Heat_Rest>20)
 				{
-					Cartridge_wheel_PID_Calc(1500);
+					Cartridge_wheel_PID_Calc(Cartridge_Slow);
 					Motor_Output[Cartridge]=Cartridge_wheel.output;
 				}
 				else
@@ -350,16 +354,18 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			break;
 			
 			default:	//Load
-				if(Switch_State[1]==0)
-				{
-	//				Cartridge_wheel_PID_Calc(1000);
-	//				Motor_Output[Cartridge]=Cartridge_wheel.output;
-				}
-				else
-				{
-					Cartridge_wheel_PID_Calc(0);
-					Motor_Output[Cartridge]=0;
-				}
+//				if(Switch_State[1]==0)
+//				{
+//					Cartridge_wheel_PID_Calc(1000);
+//					Motor_Output[Cartridge]=Cartridge_wheel.output;
+//				}
+//				else
+//				{
+//					Cartridge_wheel_PID_Calc(0);
+//					Motor_Output[Cartridge]=0;
+//				}
+				Cartridge_wheel_PID_Calc(0);
+				Motor_Output[Cartridge]=0;
 			break;
 		}
 		

@@ -416,8 +416,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		else
 			Switch_State=1;
 		
-		uint8_t Chassic_Data[3]={Chassic_State,Shoot_Ctrl,Switch_State};
-		Chassic_Ctrl(Chassic_Data,3);
+		uint8_t Chassic_Data[4]={Chassic_State,Shoot_Ctrl,Switch_State,Aimming};
+		Chassic_Ctrl(Chassic_Data,4);
 		CAN_Motor_Ctrl(&hcan1,Motor_Output);
 		for(uint8_t i=0; i<12; ++i)
 			Motor_Output_State[i]=0;
