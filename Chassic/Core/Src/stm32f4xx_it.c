@@ -54,6 +54,7 @@
 uint32_t Time_Tick=0;	//计时，一秒内没有收到云台数据停止动作
 uint8_t Motor_Power_Up=0;	//判断电机上电，1上电完成
 uint8_t Shoot_Ultra_Mode=0;	//剩余热量多，高射速消耗热量，1有效
+int Heat_Rest=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -269,29 +270,37 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			Switch_State[0]=Switch_State[1]=1;
 		}
 		
-		if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_RESET)
-		{
-			//左边检测到墙壁，开始反转
-			eliminate_dithering_right = 0;
-			eliminate_dithering_left++;
-			if (eliminate_dithering_left == 20) //消抖
-			{
-				direction = touch_Left;
-			}
-		}
-		else if(HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_RESET)
-		{
-			eliminate_dithering_right++;
-			eliminate_dithering_left = 0;
-			if (eliminate_dithering_right == 20)
-			{
-				direction = touch_Right;
-			}
-		}
+		Power_Heat_Cheak();	//功率&热量超出检测
 		
+		if(Changing_Speed_Flag==0)	//速度反向时不检测光电开关
+		{
+			if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_RESET)	//左边检测到墙壁，开始反转
+			{
+				eliminate_dithering_right = 0;
+				eliminate_dithering_left++;
+				if (eliminate_dithering_left == 20) //消抖
+				{
+					direction = touch_Left;
+					Changing_Speed_Flag=1;	//方向改变，标志位置1
+				}
+			}
+			else if(HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_RESET)
+			{
+				eliminate_dithering_right++;
+				eliminate_dithering_left = 0;
+				if (eliminate_dithering_right == 20)
+				{
+					direction = touch_Right;
+					Changing_Speed_Flag=1;	//方向改变，标志位置1
+				}
+			}
+		}
+		Check_Being_Hit();	//被击打改变速度方向检测
+		
+		Move_Allow=0;
 		if(Move_Allow==1)
 		{
-			motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed-Chassic_Speed_Buf);
+			motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed+Chassic_Speed_Offset);
 			for (uint8_t i=0; i<2; i++)
 			{
 				motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm); //根据设定值进行PID计算。
@@ -308,12 +317,13 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			}
 		}
 		
-		int Heat_Rest=320-PowerHeatData.shooter_id1_17mm_cooling_heat;	//剩余热量
+		Heat_Rest=320-PowerHeatData.shooter_id1_17mm_cooling_heat;	//剩余热量
 		if(Heat_Rest>200)	//剩余热量多，高射频消耗热量
 			Shoot_Ultra_Mode=1;
 		else if(Heat_Rest<100)
 			Shoot_Ultra_Mode=0;
 		
+//		Shoot_State=0;
 		switch(Shoot_State)	//射击模式
 		{
 			case 1:		//Single
@@ -332,18 +342,18 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			
 			case 2:		//Fast
 				if(Shoot_Ultra_Mode==1)
-					Cartridge_wheel_PID_Calc(Cartridge_Ultra);
+					Cartridge_wheel_PID_Calc(Cartridge_Ultra+Cartridge_Speed_Offset);
 				else if(Heat_Rest>50)
-					Cartridge_wheel_PID_Calc(Cartridge_Fast);
+					Cartridge_wheel_PID_Calc(Cartridge_Fast+Cartridge_Speed_Offset);
 				else
-					Cartridge_wheel_PID_Calc(Cartridge_Slow);
+					Cartridge_wheel_PID_Calc(Cartridge_Slow+Cartridge_Speed_Offset);
 				Motor_Output[Cartridge]=Cartridge_wheel.output;
 			break;
 			
 			case 3:		//Slow
 				if(Heat_Rest>20)
 				{
-					Cartridge_wheel_PID_Calc(Cartridge_Slow);
+					Cartridge_wheel_PID_Calc(Cartridge_Slow+Cartridge_Speed_Offset);
 					Motor_Output[Cartridge]=Cartridge_wheel.output;
 				}
 				else

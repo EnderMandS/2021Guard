@@ -14,7 +14,7 @@ int eliminate_dithering_left = 0;
 int eliminate_dithering_right = 0;
 int Classic_Move_Speed=Classic_Slow;
 uint8_t Aimming=0;
-int Chassic_Speed_Buf=0;
+uint8_t Changing_Speed_Flag=0;	//改变速度方向时置1，由变速函数置0		光电开关和闪避检测置1
 
 void Chassis_init(void)
 {
@@ -47,7 +47,7 @@ float Slow_Change_Speed(int dir, uint16_t Speed)
 		else
 		{
 			Last_Dir=dir;
-			Time_Cnt=0;
+			Changing_Speed_Flag=Time_Cnt=0;
 		}
 	}
 	return dir*Speed;

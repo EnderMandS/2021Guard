@@ -1277,6 +1277,7 @@ extern	ext_dart_client_cmd_t				DartClientCmd;				//0x020A
 extern	xFrameHeader             			FrameHeader;		//发送帧头信息
 
 extern bool Hurt_Data_Update;
+extern bool Power_Heat_Data_Updata;
 
 bool Judge_Read_Data(uint8_t *ReadFromUsart);
 void JUDGE_Show_Data(void);

@@ -53,6 +53,10 @@ uint16_t Judge_SelfClient_ID;//发送者机器人对应的客户端ID
 /**************裁判系统数据辅助****************/
 uint16_t ShootNum;//统计发弹量,0x0003触发一次则认为发射了一颗
 bool Hurt_Data_Update = FALSE;//装甲板伤害数据是否更新,每受一次伤害置TRUE,然后立即置FALSE,给底盘闪避用
+bool Power_Heat_Data_Updata=false;
+float Max_Shoot_Speed=0;
+float Max_Chassic_Power=0;
+
 #define BLUE  0
 #define RED   1
 
@@ -140,6 +144,9 @@ bool Judge_Read_Data(uint8_t *ReadFromUsart)
 					
 					case ID_power_heat_data:      		//0x0202 //实时功率热量
 						memcpy(&PowerHeatData, (ReadFromUsart + DATA), LEN_power_heat_data);
+						Power_Heat_Data_Updata=true;
+						if(Max_Chassic_Power<PowerHeatData.chassis_power)
+									Max_Chassic_Power=ShootData.bullet_speed;
 					break;
 					
 					case ID_game_robot_pos:      		//0x0203 //机器人位置
@@ -164,7 +171,8 @@ bool Judge_Read_Data(uint8_t *ReadFromUsart)
 					
 					case ID_shoot_data:      			//0x0207//实时射击数据
 						memcpy(&ShootData, (ReadFromUsart + DATA), LEN_shoot_data);
-						//JUDGE_ShootNumCount();//发弹量统
+						if(Max_Shoot_Speed<ShootData.bullet_speed)
+							Max_Shoot_Speed=ShootData.bullet_speed;
 					break;
 
 					case ID_bullet_surplus:			//0x0208//弹丸剩余发射数

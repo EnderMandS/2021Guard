@@ -7,9 +7,9 @@
 #define OUT	0
 #define IN 	1
 
-#define Cartridge_Ultra	2000
-#define Cartridge_Fast	1500
-#define Cartridge_Slow	1000
+#define Cartridge_Ultra	2500
+#define Cartridge_Fast	2000
+#define Cartridge_Slow	1500
 
 typedef struct
 {

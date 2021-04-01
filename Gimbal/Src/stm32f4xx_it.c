@@ -75,7 +75,13 @@ uint16_t Change_Dir_Cnt=0;
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
 int Classic_Move_Speed=700;
-int Firc_Speed=-1500;
+int Firc_Speed=-3000;	
+/*
+	3000 10m/s
+	
+	5000 21.6m/s
+	6000 26.2m/s
+*/
 uint16_t Cartridge_angle=0;
 uint32_t Cartridge_TIM_cnt=0;
 
@@ -389,7 +395,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			default:
 				break;
 		}
-		
+
 		if(Motor_Output_State[Gimbal_Y]==1)
 			Motor_Output[Gimbal_Y]=yaw;
 		else
