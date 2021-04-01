@@ -32,6 +32,8 @@
 #include "shoot.h"
 #include "judge.h"
 #include "bsp_usart.h"
+#include <stdio.h>
+#include <stdlib.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -99,6 +101,7 @@ int main(void)
   MX_TIM1_Init();
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
+	srand(0xAA);
 	Bsp_UART_Receive_IT(&huart6,Judgement_Buf,JUDGEMENT_BUF_LEN);
 	CAN_Filter_Init();
 	Chassis_init();

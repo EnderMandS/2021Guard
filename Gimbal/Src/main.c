@@ -106,7 +106,7 @@ int main(void)
 	CAN_Filter_Init();
 	Bsp_UART_Receive_IT(&huart3,UART_Buffer,36);   //启动串口接收//遥控
 	Bsp_UART_Receive_IT(&huart1, View_Buf, VIEW_BUF_LEN); //视觉
-	Bsp_UART_Receive_IT(&huart6,Judgement_Buf,JUDGEMENT_BUF_LEN); //裁判系统
+//	Bsp_UART_Receive_IT(&huart6,Judgement_Buf,JUDGEMENT_BUF_LEN); //裁判系统
 	Shoot_Speed_Pid_Init();
 	HAL_TIM_Base_Start_IT(&htim1);
   /* USER CODE END 2 */

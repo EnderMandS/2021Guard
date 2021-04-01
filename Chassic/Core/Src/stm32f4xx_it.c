@@ -297,7 +297,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		}
 		Check_Being_Hit();	//被击打改变速度方向检测
 		
-		Move_Allow=0;
 		if(Move_Allow==1)
 		{
 			motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed+Chassic_Speed_Offset);
@@ -323,7 +322,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		else if(Heat_Rest<100)
 			Shoot_Ultra_Mode=0;
 		
-//		Shoot_State=0;
 		switch(Shoot_State)	//射击模式
 		{
 			case 1:		//Single

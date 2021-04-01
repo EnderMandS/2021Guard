@@ -317,9 +317,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		{
 			case 1:	//×ÔÃé
 			{
-				Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
-				if(remote_control.switch_left==1)
-					Chassic_State=1;
+				Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
 				Gimbal_Sotf_Start();
 				Gimbal_Automatic_control();
 				switch(view_shoot_mode)	//²¦µ¯	DD:²»ÏìÓ¦ EE:µÍËÙ·¢Éä FF:¸ßËÙ·¢Éä	
@@ -336,7 +334,24 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						Shoot_Ctrl=0;
 						break;
 				}
-				Shoot_Speed_Pid_Calc(Firc_Speed);	//Ä¦²ÁÂÖ
+				switch(remote_control.switch_left)
+				{
+					case 1:	//µ×ÅÌ+Ä¦²ÁÂÖ
+						Chassic_State=1;
+						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
+						Shoot_Speed_Pid_Calc(Firc_Speed);
+						break;
+					
+					case 3:	//Ä¦²ÁÂÖ
+						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
+						Shoot_Speed_Pid_Calc(Firc_Speed);
+						break;
+					
+					default:
+						Chassic_State=0;
+						Shoot_Ctrl=0;	//ÎÞÄ¦²ÁÂÖ½ûÖ¹²¦µ¯
+						break;
+				}
 			}
 			break;
 			
@@ -352,17 +367,17 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						case 1:	//Ä¦²ÁÂÖ+²¦µ¯+µ×ÅÌ
 						{
 							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
-							Shoot_Speed_Pid_Calc(Firc_Speed);	//Ä¦²ÁÂÖ
-							Shoot_Ctrl=3;
+							Shoot_Speed_Pid_Calc(Firc_Speed);
+							Shoot_Ctrl=2;	//¸ßËÙ
 							Chassic_State=1;
 						}
 						break;
 						
-						case 3:	//Ä¦²ÁÂÖ
+						case 3:	//Ä¦²ÁÂÖ+²¦µ¯
 						{
 							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
-							Shoot_Speed_Pid_Calc(Firc_Speed);	//Ä¦²ÁÂÖ
-							Shoot_Ctrl=0;
+							Shoot_Speed_Pid_Calc(Firc_Speed);
+							Shoot_Ctrl=2;	//¸ßËÙ
 							Chassic_State=0;
 						}
 						break;

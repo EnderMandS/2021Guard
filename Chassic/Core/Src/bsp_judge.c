@@ -2,40 +2,38 @@
 #include "judge.h"
 #include "classic.h"
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 int Chassic_Speed_Offset=0;
 int Cartridge_Speed_Offset=0;
 
-void Check_Being_Hit(void)	//200Hz 2秒内受到三次装甲伤害动作 冷却3秒
+void Check_Being_Hit(void)	//受到伤害加速
 {
-	static uint16_t Time_cnt=0;
-	static uint16_t Hit_cnt=0;
-	static uint8_t Change_Speed=0;
+	static uint32_t Time_cnt=0;
+	static uint8_t Being_Hit=0;
+	static uint32_t SpeedUp_Time=0;
 	
-	++Time_cnt;
 	if(Hurt_Data_Update==true)
 	{
 		Hurt_Data_Update=false;
-		++Hit_cnt;
-	}
-	if(Time_cnt>400 && Change_Speed==0)
-	{
-		if(Hit_cnt>=3)
-			Change_Speed=1;
-		Time_cnt=Hit_cnt=0;
-	}
-	if(Change_Speed==1)
-	{
-		if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_SET && HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_SET && Changing_Speed_Flag==0)	//没碰到墙
+		if(Being_Hit==0)
 		{
-			direction=-direction;
-			Changing_Speed_Flag=1;
+			Being_Hit=1;
+			SpeedUp_Time=(rand()%3+1)*200;	//1-3s 200Hz
+			if(Classic_Move_Speed==Classic_Middle)
+				Classic_Move_Speed=Classic_Fast;
 		}
-		Change_Speed=2;
 	}
-	if(Change_Speed==2 && Time_cnt>600)
+	if(Being_Hit==1)
 	{
-		Change_Speed=Time_cnt=Hit_cnt=0;
+		++Time_cnt;
+		if(Time_cnt>SpeedUp_Time)
+		{
+			Being_Hit=Time_cnt=0;
+			if(Classic_Move_Speed==Classic_Fast)
+				Classic_Move_Speed=Classic_Middle;	//恢复巡检速度
+		}
 	}
 }
 

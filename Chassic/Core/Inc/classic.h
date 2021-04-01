@@ -5,9 +5,9 @@
 #include "pid.h"
 
 #define Buff_Time 100
-#define Classic_Slow		1000
-#define Classic_Middle	1500
-#define Classic_Fast		2000
+#define Classic_Slow		1000	//Ãé×¼
+#define Classic_Middle	1500	//Ñ²¼ì
+#define Classic_Fast		2000	//ÉÁ±Ü
 
 #define Motor_Base 0x201
 typedef enum
