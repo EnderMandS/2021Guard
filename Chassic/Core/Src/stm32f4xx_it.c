@@ -51,6 +51,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
+int32_t Fric_Speed=-0;
 uint32_t Time_Tick=0;	//计时，一秒内没有收到云台数据停止动作
 uint8_t Motor_Power_Up=0;	//判断电机上电，1上电完成
 uint8_t Shoot_Ultra_Mode=0;	//剩余热量多，高射速消耗热量，1有效
@@ -71,6 +72,7 @@ int Heat_Rest=0;
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
 extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim2;
 extern DMA_HandleTypeDef hdma_usart6_rx;
 extern UART_HandleTypeDef huart6;
 /* USER CODE BEGIN EV */
@@ -297,6 +299,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		}
 		Check_Being_Hit();	//被击打改变速度方向检测
 		
+//		Move_Allow=0;
 		if(Move_Allow==1)
 		{
 			motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed+Chassic_Speed_Offset);
@@ -322,6 +325,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		else if(Heat_Rest<100)
 			Shoot_Ultra_Mode=0;
 		
+		Shoot_State=0;
 		switch(Shoot_State)	//射击模式
 		{
 			case 1:		//Single
@@ -377,9 +381,27 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			break;
 		}
 		
+		
 		CAN_Motor_Ctrl(&hcan2,Motor_Output);
 	}
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM2 global interrupt.
+  */
+void TIM2_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM2_IRQn 0 */
+
+  /* USER CODE END TIM2_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim2);
+  /* USER CODE BEGIN TIM2_IRQn 1 */
+	uint8_t Data[8]={0};
+	memcpy(Data,&Fric_Speed,4);
+	Data[4]=is_red_or_blue();
+	CAN_Send_Gimbal(&hcan1,Data,5);
+  /* USER CODE END TIM2_IRQn 1 */
 }
 
 /**

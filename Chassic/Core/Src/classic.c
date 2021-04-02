@@ -21,7 +21,7 @@ void Chassis_init(void)
 	for(int j=0;j<2;j++)
 	{
 		pid_init(&motor_pid[j]);
-		motor_pid[j].f_param_init(&motor_pid[j],PID_Speed,16384,5000,10,0,6000,0,1.5,0.1,0);  //0.004
+		motor_pid[j].f_param_init(&motor_pid[j],PID_Speed,5000,2500,10,0,6000,0,1.5,0.1,0);  //0.004
 /*				   PID_ID id,uint16_t maxOutput,uint16_t integralLimit,float deadband,uint16_t controlPeriod,int16_t max_err,     
 			int16_t  target,
 			 float kp,
@@ -38,7 +38,7 @@ float Slow_Change_Speed(int dir, uint16_t Speed)
 	{
 		++Time_Cnt;
 		if(Time_Cnt<Buff_Time)
-		{
+		{  
 			if(Last_Dir==0)
 				return dir*sin( (Time_Cnt*1.0)/Buff_Time*PI*0.5 )*Speed;
 			else
@@ -51,4 +51,29 @@ float Slow_Change_Speed(int dir, uint16_t Speed)
 		}
 	}
 	return dir*Speed;
+	
+//	if(dir!=Last_Dir)
+//	{
+//		++Time_Cnt;
+//		if(Time_Cnt<(Buff_Time/2.f))
+//		{
+//			if(Last_Dir==0)
+//				return dir*(Time_Cnt*1.0)/(Buff_Time*1.0)*Speed;
+//			else
+//				return Last_Dir*(Time_Cnt*1.0)*2.f/(Buff_Time*1.0)*Speed;
+//		}
+//		else if(Time_Cnt<Buff_Time)
+//		{
+//			if(Last_Dir==0)
+//				return dir*(Time_Cnt*1.0)/(Buff_Time*1.0)*Speed;
+//			else
+//				return dir*((Time_Cnt*1.0)-(Buff_Time/2.f))/(Buff_Time/2.f)*Speed;
+//		}
+//		else
+//		{
+//			Last_Dir=dir;
+//			Changing_Speed_Flag=Time_Cnt=0;
+//		}
+//	}
+//	return dir*Speed;
 }

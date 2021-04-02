@@ -40,7 +40,8 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-uint8_t Send_Position_Buf[10];
+uint8_t Send_Position_Buf[11];
+uint8_t color=0;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -120,12 +121,17 @@ int main(void)
     /* USER CODE BEGIN 3 */
 		if(extern_view_send_state == 1)
 		{
-			send_pitch.f = pit_nowangle;
-			send_yaw.f = yaw_nowangle;
+			send_pitch.f = pit_nowangle-131.5f;
+			if (yaw_nowangle > 180) {
+				send_yaw.f = -(360 - yaw_nowangle);
+			} else {
+				send_yaw.f = yaw_nowangle;
+			}
 			Send_Position_Buf[0] = 0x5A;
 			memcpy(Send_Position_Buf+1,send_pitch.c,4);
 			memcpy(Send_Position_Buf+5,send_yaw.c,4);
-			Send_Position_Buf[9] = 0xA5;
+			Send_Position_Buf[9] = color;
+			Send_Position_Buf[10] = 0xA5;
 			Uart1_TransmissionT_Data(Send_Position_Buf,COUNTOF(Send_Position_Buf));
 			extern_view_send_state = 0;
 		}

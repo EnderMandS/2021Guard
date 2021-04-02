@@ -146,7 +146,7 @@ bool Judge_Read_Data(uint8_t *ReadFromUsart)
 						memcpy(&PowerHeatData, (ReadFromUsart + DATA), LEN_power_heat_data);
 						Power_Heat_Data_Updata=true;
 						if(Max_Chassic_Power<PowerHeatData.chassis_power)
-									Max_Chassic_Power=ShootData.bullet_speed;
+									Max_Chassic_Power=PowerHeatData.chassis_power;
 					break;
 					
 					case ID_game_robot_pos:      		//0x0203 //»úÆ÷ÈËÎ»ÖÃ

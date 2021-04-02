@@ -62,8 +62,12 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 					view_shoot_mode = rx_view_buf[2];	//射击指令
 					if(remote_control.switch_right==1)
 					{
-						pitch_angle = pitchangle.f;   
-						yaw_angle = yawangle.f; 
+						pitch_angle = pitchangle.f+131.5f;
+						if(yawangle.f>180)
+							yaw_angle = yawangle.f+360;
+						else
+							yaw_angle = yawangle.f;
+						
 					}
 					break;
 				

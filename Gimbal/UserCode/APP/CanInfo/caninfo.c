@@ -8,13 +8,15 @@
 #include "caninfo.h"
 #include "main.h"
 #include "can.h"
+#include <string.h>
 
 gear_moto_measure_t gear_motor_data[12];
 int16_t Motor_Output[12]={0};
 uint8_t Motor_Output_State[12]={0};
 uint8_t Wait_For_Motor_Cnt[12]={0};
 uint8_t Wait_For_Motor_State=1;
-
+extern int Firc_Speed;
+extern uint8_t color;
 
 /**
  * @brief: 数据处理,将接收到数据传入指针并解算
@@ -110,6 +112,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 			case 0x20B:
 					get_gear_motor_measure(&gear_motor_data[rx_header.StdId-Motor_Base], rx_data);
 				break;
+			case 0x1AA:
+//				memcpy(&Firc_Speed,rx_data,4);
+				color=rx_data[4];
 		default:
 				break;
 		}

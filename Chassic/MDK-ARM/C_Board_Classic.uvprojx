@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\Core\Src</IncludePath>
+              <IncludePath>../Core/Inc; ../Drivers/STM32F4xx_HAL_Driver/Inc; ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy; ../Drivers/CMSIS/Device/ST/STM32F4xx/Include; ../Drivers/CMSIS/Include; ..\Core\Src</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -418,6 +418,26 @@
               <FilePath>..\Core\Src\shoot.c</FilePath>
             </File>
             <File>
+              <FileName>judge.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\judge.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_Usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\bsp_Usart.c</FilePath>
+            </File>
+            <File>
+              <FileName>crc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\crc.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_judge.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\bsp_judge.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/main.c</FilePath>
@@ -456,26 +476,6 @@
               <FileName>stm32f4xx_hal_msp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32f4xx_hal_msp.c</FilePath>
-            </File>
-            <File>
-              <FileName>judge.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\judge.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_Usart.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\bsp_Usart.c</FilePath>
-            </File>
-            <File>
-              <FileName>crc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\crc.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_judge.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\bsp_judge.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -3,6 +3,7 @@
 #include "classic.h"
 #include "shoot.h"
 #include "bullet.h"
+#include <string.h>
 
 #define ABS(x) ((x > 0) ? x : -x)
 
@@ -144,6 +145,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	{
 		if(rx_header.StdId==0x101)
 			Gimbal_Receive(rx_data);
+		
 	}
 }
 void CAN_Motor_Ctrl(CAN_HandleTypeDef *hcan, int16_t Motor_Data[12])
@@ -170,4 +172,16 @@ void CAN_Motor_Ctrl(CAN_HandleTypeDef *hcan, int16_t Motor_Data[12])
 		can_send_data[7] = Motor_Data[4*i+3];
 		HAL_CAN_AddTxMessage(hcan, &can_tx_message, can_send_data, &send_mail_box);
 	}
+}
+void CAN_Send_Gimbal(CAN_HandleTypeDef *hcan, uint8_t Data[], uint8_t Len)
+{
+	CAN_TxHeaderTypeDef can_tx_message;
+	can_tx_message.IDE = CAN_ID_STD;
+	can_tx_message.RTR = CAN_RTR_DATA;
+	can_tx_message.DLC = Len;
+	uint8_t can_send_data[8];
+	uint32_t send_mail_box;
+	can_tx_message.StdId = 0x1AA;
+	memcpy(can_send_data,Data,Len);
+	HAL_CAN_AddTxMessage(&hcan1, &can_tx_message, can_send_data, &send_mail_box);
 }

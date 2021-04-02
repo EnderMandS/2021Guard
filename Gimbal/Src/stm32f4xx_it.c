@@ -74,16 +74,13 @@ uint16_t Change_Dir_Cnt=0;
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-int Classic_Move_Speed=700;
-int Firc_Speed=-3000;	
+int Firc_Speed=-5000;	
 /*
 	3000 10m/s
 	
 	5000 21.6m/s
 	6000 26.2m/s
 */
-uint16_t Cartridge_angle=0;
-uint32_t Cartridge_TIM_cnt=0;
 
 uint8_t Motor_Power_Up=0;	//判断电机上电
 /* USER CODE END PV */
