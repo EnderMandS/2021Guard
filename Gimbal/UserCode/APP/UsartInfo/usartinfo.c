@@ -60,15 +60,6 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 					view_send_state = 3;
 					Aimming=1;
 					view_shoot_mode = rx_view_buf[2];	//射击指令
-					if(remote_control.switch_right==1)
-					{
-						pitch_angle = pitchangle.f+131.5f;
-						if(yawangle.f>180)
-							yaw_angle = yawangle.f+360;
-						else
-							yaw_angle = yawangle.f;
-						
-					}
 					break;
 				
 				default:
@@ -76,11 +67,15 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 			}
 			memcpy(pitchangle.c, rx_view_buf + 3, 4);
 			memcpy(yawangle.c, rx_view_buf + 7, 4);
-//			if (remote_control.switch_right==1 && view_send_state==3 )
-//			{
-//				 pitch_angle = pitchangle.f;   
-//				yaw_angle = yawangle.f; 
-//			}
+			if(remote_control.switch_right==1 && view_send_state==3 )
+			{
+				pitch_angle = pitchangle.f+131.5f;
+				if(yawangle.f>180)
+					yaw_angle = yawangle.f+360;
+				else
+					yaw_angle = yawangle.f;
+				
+			}
 		}
 	}
 	//裁判系统串口

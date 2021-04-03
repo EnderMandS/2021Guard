@@ -102,7 +102,8 @@ void Gimbal_Receive(uint8_t Receive_Data[8])
 	switch(Receive_Data[3])	// 0:Inspect  1:Aim
 	{
 		case 0:
-			Classic_Move_Speed=Classic_Middle;
+			if(Classic_Move_Speed!=Classic_Fast)
+				Classic_Move_Speed=Classic_Middle;
 		break;
 		
 		case 1:
@@ -145,7 +146,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	{
 		if(rx_header.StdId==0x101)
 			Gimbal_Receive(rx_data);
-		
 	}
 }
 void CAN_Motor_Ctrl(CAN_HandleTypeDef *hcan, int16_t Motor_Data[12])

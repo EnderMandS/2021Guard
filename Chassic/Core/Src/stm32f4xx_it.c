@@ -325,7 +325,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		else if(Heat_Rest<100)
 			Shoot_Ultra_Mode=0;
 		
-		Shoot_State=0;
+//		Shoot_State=0;
 		switch(Shoot_State)	//Éä»÷Ä£Ê½
 		{
 			case 1:		//Single

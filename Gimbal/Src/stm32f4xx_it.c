@@ -74,7 +74,7 @@ uint16_t Change_Dir_Cnt=0;
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-int Firc_Speed=-5000;	
+int Firc_Speed=-6000;	
 /*
 	3000 10m/s
 	
