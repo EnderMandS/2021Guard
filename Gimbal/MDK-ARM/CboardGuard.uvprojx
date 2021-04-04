@@ -137,7 +137,11 @@
             <DriverSelection>4107</DriverSelection>
           </Flash1>
           <bUseTDR>1</bUseTDR>
+<<<<<<< HEAD
           <Flash2>BIN\UL2CM3.DLL</Flash2>
+=======
+          <Flash2>STLink\ST-LINKIII-KEIL_SWO.dll</Flash2>
+>>>>>>> a74eae103226aea3552992b40b38746e573b2455
           <Flash3></Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
