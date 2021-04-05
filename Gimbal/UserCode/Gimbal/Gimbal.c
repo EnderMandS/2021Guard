@@ -13,7 +13,7 @@
 #include <math.h>
 #include "usartinfo.h"
 
-#define Pitch_Limit_Top			131.5f
+#define Pitch_Limit_Top			122.0f
 #define Pitch_Limit_Bottom	72.5f
 
 #define Inspect_Empty				3

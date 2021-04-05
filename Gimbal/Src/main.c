@@ -121,7 +121,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
 		if(extern_view_send_state == 1)
 		{
-			send_pitch.f = pit_nowangle-131.5f;
+			send_pitch.f = pit_nowangle - 122.0f;
 			if (yaw_nowangle > 180) {
 				send_yaw.f = -(360 - yaw_nowangle);
 			} else {

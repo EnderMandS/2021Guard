@@ -69,7 +69,7 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 			memcpy(yawangle.c, rx_view_buf + 7, 4);
 			if(remote_control.switch_right==1 && view_send_state==3 )
 			{
-				pitch_angle = pitchangle.f+131.5f;
+				pitch_angle = pitchangle.f + 122.0f;
 				if(yawangle.f>180)
 					yaw_angle = yawangle.f+360;
 				else
