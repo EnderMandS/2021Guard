@@ -121,11 +121,11 @@ void pid_init(PID_TypeDef *pid)
 //imu.wz是Yaw的速度，imu.wx是Pitch的速度，imu.wy是rol的速度
 
 float PitchOPIDP = 5;
-float PitchOPIDI = 0;
+float PitchOPIDI = 0.7;
 float PitchOPIDD = 10;
 float PitchOPIDCurrentError = 0;
 float PitchOPIDLastError = 0;
-float PitchOPIDIMax = 0;
+float PitchOPIDIMax = 200;
 float PitchOPIDPIDMax = 15000;
 float PitchOPIDPout, PitchOPIDIout, PitchOPIDDout;
 float PitchOPIDPIDout;
