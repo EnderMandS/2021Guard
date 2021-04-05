@@ -1,11 +1,11 @@
 /**
   ****************************(C) COPYRIGHT 2016 DJI****************************
   * @file       pid.c/h
-  * @brief      pidÊµÏÖº¯Êý£¬°üÀ¨³õÊ¼»¯£¬PID¼ÆËãº¯Êý£¬
+  * @brief      pidå®žçŽ°å‡½æ•°ï¼ŒåŒ…æ‹¬åˆå§‹åŒ–ï¼ŒPIDè®¡ç®—å‡½æ•°ï¼Œ
   * @note       
   * @history
   *  Version    Date            Author          Modification
-  *  V1.0.0     Dec-26-2018     RM              1. Íê³É
+  *  V1.0.0     Dec-26-2018     RM              1. å®Œæˆ
   *
   @verbatim
   ==============================================================================
@@ -23,7 +23,7 @@
 #include "Gimbal.h"
 
 #define ABS(x) ((x > 0) ? x : -x)
-/*²ÎÊý³õÊ¼»¯--------------------------------------------------------------*/
+/*å‚æ•°åˆå§‹åŒ–--------------------------------------------------------------*/
 static void pid_param_init(
 														PID_TypeDef *pid,
 														PID_ID id,
@@ -40,7 +40,7 @@ static void pid_param_init(
 {
 	pid->id = id;
 
-	pid->ControlPeriod = period; //Ã»ÓÃµ½
+	pid->ControlPeriod = period; //æ²¡ç”¨åˆ°
 	pid->DeadBand = deadband;
 	pid->IntegralLimit = intergral_limit;
 	pid->MaxOutput = maxout;
@@ -54,7 +54,7 @@ static void pid_param_init(
 	pid->output = 0;
 }
 
-/*ÖÐÍ¾¸ü¸Ä²ÎÊýÉè¶¨--------------------------------------------------------------*/
+/*ä¸­é€”æ›´æ”¹å‚æ•°è®¾å®š--------------------------------------------------------------*/
 static void pid_reset(PID_TypeDef *pid, float kp, float ki, float kd)
 {
 	pid->kp = kp;
@@ -62,7 +62,7 @@ static void pid_reset(PID_TypeDef *pid, float kp, float ki, float kd)
 	pid->kd = kd;
 }
 
-/*pid¼ÆËã-----------------------------------------------------------------------*/
+/*pidè®¡ç®—-----------------------------------------------------------------------*/
 
 static float pid_calculate(PID_TypeDef *pid, float measure) //, int16_t target)
 {
@@ -79,7 +79,7 @@ static float pid_calculate(PID_TypeDef *pid, float measure) //, int16_t target)
 
 	pid->err = pid->target - pid->measure;
 
-	//ÊÇ·ñ½øÈëËÀÇø
+	//æ˜¯å¦è¿›å…¥æ­»åŒº
 	if ((ABS(pid->err) > pid->DeadBand))
 	{
 		pid->pout = pid->kp * pid->err;
@@ -87,16 +87,16 @@ static float pid_calculate(PID_TypeDef *pid, float measure) //, int16_t target)
 
 		pid->dout = pid->kd * (pid->err - pid->last_err);
 
-		//»ý·ÖÊÇ·ñ³¬³öÏÞÖÆ
+		//ç§¯åˆ†æ˜¯å¦è¶…å‡ºé™åˆ¶
 		if (pid->iout > pid->IntegralLimit)
 			pid->iout = pid->IntegralLimit;
 		if (pid->iout < -pid->IntegralLimit)
 			pid->iout = -pid->IntegralLimit;
 
-		//pidÊä³öºÍ
+		//pidè¾“å‡ºå’Œ
 		pid->output = pid->pout + pid->iout + pid->dout;
 
-		//pid->output = pid->output*0.7f + pid->last_output*0.3f;  //ÂË²¨£¿
+		//pid->output = pid->output*0.7f + pid->last_output*0.3f;  //æ»¤æ³¢ï¼Ÿ
 		if (pid->output > pid->MaxOutput)
 		{
 			pid->output = pid->MaxOutput;
@@ -110,7 +110,7 @@ static float pid_calculate(PID_TypeDef *pid, float measure) //, int16_t target)
 	return pid->output;
 }
 
-/*pid½á¹¹Ìå³õÊ¼»¯£¬Ã¿Ò»¸öpid²ÎÊýÐèÒªµ÷ÓÃÒ»´Î-----------------------------------------------------*/
+/*pidç»“æž„ä½“åˆå§‹åŒ–ï¼Œæ¯ä¸€ä¸ªpidå‚æ•°éœ€è¦è°ƒç”¨ä¸€æ¬¡-----------------------------------------------------*/
 void pid_init(PID_TypeDef *pid)
 {
 	pid->f_param_init = pid_param_init;
@@ -118,16 +118,18 @@ void pid_init(PID_TypeDef *pid)
 	pid->f_cal_pid = pid_calculate;
 }
 
-//imu.wzÊÇYawµÄËÙ¶È£¬imu.wxÊÇPitchµÄËÙ¶È£¬imu.wyÊÇrolµÄËÙ¶È
+//imu.wzæ˜¯Yawçš„é€Ÿåº¦ï¼Œimu.wxæ˜¯Pitchçš„é€Ÿåº¦ï¼Œimu.wyæ˜¯rolçš„é€Ÿåº¦
 
 float PitchOPIDP = 5;
-float PitchOPIDI = 0.7;
+float PitchOPIDI = 0.07;
 float PitchOPIDD = 10;
 float PitchOPIDCurrentError = 0;
 float PitchOPIDLastError = 0;
 float PitchOPIDIMax = 200;
 float PitchOPIDPIDMax = 15000;
-float PitchOPIDPout, PitchOPIDIout, PitchOPIDDout;
+float PitchOPIDPout;
+float PitchOPIDIout;
+float PitchOPIDDout;
 float PitchOPIDPIDout;
 
 float PitchIPIDP = 150;
@@ -165,7 +167,7 @@ float YawIPIDPIDout;
 float YawCurrentTick, YawLastTick;
 float Control_YawPID(float Target)
 {
-	/***************************************	Íâ»·½Ç¶È»·	******************************************/
+	/***************************************	å¤–çŽ¯è§’åº¦çŽ¯	******************************************/
 	float Angle_now = Yaw_Motor_Angle_Change();
 
 	YawOPIDCurrentError = (Target - Angle_now) ;
@@ -188,7 +190,7 @@ float Control_YawPID(float Target)
 	YawOPIDPIDout = YawOPIDPout + YawOPIDIout + YawOPIDDout;
 	LimitMax(YawOPIDPIDout, YawOPIDPIDMax)
 		YawOPIDLastError = YawOPIDCurrentError;
-	/***************************************	ÄÚ»·ËÙ¶È»·	******************************************/
+	/***************************************	å†…çŽ¯é€Ÿåº¦çŽ¯	******************************************/
 	YawIPIDCurrentError = YawOPIDPIDout - (gear_motor_data[Gimbal_Y].speed_rpm * 2 * PI / 60); //YawOPIDPIDout
 	YawIPIDPout = YawIPIDP * YawIPIDCurrentError;
 	YawIPIDIout += YawIPIDI * YawIPIDCurrentError;
@@ -202,7 +204,7 @@ float Control_YawPID(float Target)
 
 float Control_PitchPID(float Target)
 {
-	/***************************************	Íâ»·½Ç¶È»·	******************************************/
+	/***************************************	å¤–çŽ¯è§’åº¦çŽ¯	******************************************/
 	PitchOPIDCurrentError = Target - gear_motor_data[Gimbal_P].angle * Motor_Ecd_to_Ang;
 	if(fabs(PitchOPIDCurrentError)>180)
 	{
@@ -217,13 +219,13 @@ float Control_PitchPID(float Target)
 	}
 	PitchOPIDPout = PitchOPIDP * PitchOPIDCurrentError;
 	PitchOPIDIout += PitchOPIDI * PitchOPIDCurrentError;
-	LimitMax(PitchOPIDIout, PitchOPIDIMax)
-		PitchOPIDDout = -PitchOPIDD * (gear_motor_data[Gimbal_P].speed_rpm * 2 * PI / 60);
+	LimitMax(PitchOPIDIout, PitchOPIDIMax);
+	PitchOPIDDout = -PitchOPIDD * (gear_motor_data[Gimbal_P].speed_rpm * 2 * PI / 60);
 	PitchOPIDPIDout = PitchOPIDPout + PitchOPIDIout + PitchOPIDDout;
 	LimitMax(PitchOPIDPIDout, PitchOPIDPIDMax)
 		PitchOPIDLastError = PitchOPIDCurrentError;
 
-	/***************************************	ÄÚ»·ËÙ¶È»·	******************************************/
+	/***************************************	å†…çŽ¯é€Ÿåº¦çŽ¯	******************************************/
 	PitchIPIDCurrentError = PitchOPIDPIDout - (gear_motor_data[Gimbal_P].speed_rpm * 2 * PI / 60);
 	PitchIPIDPout = PitchIPIDP * PitchIPIDCurrentError;
 	PitchIPIDIout += PitchIPIDI * PitchIPIDCurrentError;

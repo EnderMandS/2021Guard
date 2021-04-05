@@ -16,9 +16,9 @@
 #define Pitch_Limit_Top			131.5f
 #define Pitch_Limit_Bottom	72.5f
 
-#define Inspect_Empty				3
-#define Pitch_Inspect_Speed	0.2f
-#define Yaw_Inspect_Speed		0.2f
+#define Inspect_Empty				1
+#define Pitch_Inspect_Speed	0.15f
+#define Yaw_Inspect_Speed		0.1f
 
 int32_t pitch, yaw;
 float yaw_angle;
