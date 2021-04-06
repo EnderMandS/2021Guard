@@ -105,9 +105,9 @@ int main(void)
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
 	CAN_Filter_Init();
-	Bsp_UART_Receive_IT(&huart3,UART_Buffer,36);   //Æô¶¯´®¿Ú½ÓÊÕ//Ò£¿Ø
-	Bsp_UART_Receive_IT(&huart1, View_Buf, VIEW_BUF_LEN); //ÊÓ¾õ
-//	Bsp_UART_Receive_IT(&huart6,Judgement_Buf,JUDGEMENT_BUF_LEN); //²ÃÅÐÏµÍ³
+	Bsp_UART_Receive_IT(&huart3,UART_Buffer,36);   //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú½ï¿½ï¿½ï¿½//Ò£ï¿½ï¿½
+	Bsp_UART_Receive_IT(&huart1, View_Buf, VIEW_BUF_LEN); //ï¿½Ó¾ï¿½
+//	Bsp_UART_Receive_IT(&huart6,Judgement_Buf,JUDGEMENT_BUF_LEN); //ï¿½ï¿½ï¿½ï¿½ÏµÍ³
 	Shoot_Speed_Pid_Init();
 	HAL_TIM_Base_Start_IT(&htim1);
   /* USER CODE END 2 */

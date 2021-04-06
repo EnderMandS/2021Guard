@@ -13,12 +13,12 @@
 #include <math.h>
 #include "usartinfo.h"
 
-#define Pitch_Limit_Top			122.0f
-#define Pitch_Limit_Bottom	72.5f
+#define Pitch_Limit_Top 122.0f
+#define Pitch_Limit_Bottom 72.5f
 
-#define Inspect_Empty				3
+#define Inspect_Empty 3
 #define Pitch_Inspect_Speed	0.2f
-#define Yaw_Inspect_Speed		0.2f
+#define Yaw_Inspect_Speed 0.2f
 
 int32_t pitch, yaw;
 float yaw_angle;
@@ -28,8 +28,22 @@ int control_allow = 0;
 int read_allow = 0;
 int Pitch_dir=1;
 
+// 自瞄时实际执行的pitch、yaw，云台坐标系
+float vision_target_pitch,vision_target_yaw;
+// 预测相关
+#define PREVIOUS_DET_LENGTH 5
+float last_time_target_yaw;
+float last_time_target_pitch;
+float previous_target_yaw_det[PREVIOUS_DET_LENGTH];
+float previous_target_pitch_det[PREVIOUS_DET_LENGTH];
+int previous_target_yaw_det_index = 0;
+int previous_target_pitch_det_index = 0;
+int n;
+float yaw_det_average;
+float pitch_det_average;
+
 //循环限幅函数
-float	loop_fp32_constrain(float Input, float minValue, float maxValue)
+float loop_fp32_constrain(float Input, float minValue, float maxValue)
 {
     if (maxValue < minValue)
     {
@@ -112,14 +126,66 @@ void Gimbal_Automatic_control(void)
 	{
 		if(Aimming==1)
 		{
-			yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
+            vision_target_yaw += (yaw_det_average * 50 * 0.12) / 8.0f;
+			yaw_angle = loop_fp32_constrain(vision_target_yaw,0,360);
 			yaw = Control_YawPID(yaw_angle);
+            pitch_angle = vision_target_pitch;
 			Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
 			pitch = Control_PitchPID(pitch_angle);
 		}
 		else
 			Gimbal_Inspect();
 	}
+}
+
+/**
+ * @brief: 更改自瞄目标，当串口接收到新目标时运行这个函数
+ * @param {*}
+ * @retval: 
+ * @attention: 输入为视觉坐标系（-180°~180°）
+ */
+void Gimbal_Automatic_target(float _pitch,float _yaw){
+    float det_yaw = _yaw - last_time_target_yaw;
+
+    if ( det_yaw > 180.0f){
+        det_yaw = 360.0f - det_yaw;
+    } else if (det_yaw < -180.0f){
+        det_yaw = -360.0f - det_yaw;
+    }
+
+    if( fabs(det_yaw) > 1.5){
+        det_yaw = 0;
+    }
+
+    previous_target_yaw_det[previous_target_yaw_det_index] = det_yaw;
+    if (previous_target_yaw_det_index < PREVIOUS_DET_LENGTH)
+        previous_target_yaw_det_index++;
+    else
+        previous_target_yaw_det_index = 0;
+
+    if(++n > PREVIOUS_DET_LENGTH){
+        n = PREVIOUS_DET_LENGTH;
+    }
+
+    float sum = 0.0;
+    for (int i = 0; i < n; i++)
+    {
+        sum += previous_target_yaw_det[i];
+    }
+
+    yaw_det_average = sum / n;
+
+    last_time_target_yaw = _yaw;
+    // 视觉坐标系转云台坐标系
+    vision_target_pitch = _pitch + Pitch_Limit_Top;
+    vision_target_yaw = _yaw;
+}
+
+void Gimbal_Automatic_target_lost(){
+    last_time_target_yaw = 0.0;
+    previous_target_yaw_det_index = 0;
+    n = 0;
+    yaw_det_average = 0.0;
 }
 
 void Gimbal_Inspect(void)	//巡检

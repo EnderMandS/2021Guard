@@ -11,8 +11,6 @@
 #define yaw_center 280
 #define pitch_center 107
 #include "main.h"
-extern float yaw_angle;
-extern float pitch_angle;
 extern int sotf_start;
 extern int control_allow;
 extern int read_allow;
@@ -26,5 +24,8 @@ void Gimbal_Automatic_control(void);
 void Gimbal_Inspect(void);
 float Yaw_Motor_Angle_Change(void);
 float Limit_Zero_To_360(float Input);
+
+extern void Gimbal_Automatic_target(float _pitch,float _yaw);
+extern void Gimbal_Automatic_target_lost(void);
 
 #endif

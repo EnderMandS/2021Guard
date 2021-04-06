@@ -37,13 +37,13 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
-//ËÙ¶È»·Îª1£¬Î»ÖÃ»·Îª0
+//é€Ÿåº¦ç¯ä¸º1ï¼Œä½ç½®ç¯ä¸º0
 #define shoot_speed 1
 
 
 float yaw_nowangle;
 float pit_nowangle;
-int control_mode = 0; //¿ØÖÆÄ£Ê½0Îª±£»¤Ä£Ê½£¬1ÎªÊÖ¿ØÄ£Ê½£¬2Îª×ÔÃéÄ£Ê½
+int control_mode = 0; //æ§åˆ¶æ¨¡å¼0ä¸ºä¿æŠ¤æ¨¡å¼ï¼Œ1ä¸ºæ‰‹æ§æ¨¡å¼ï¼Œ2ä¸ºè‡ªç„æ¨¡å¼
 int Cartridge_output;
 int set_spd_to_Classis_wheel;
 
@@ -82,7 +82,7 @@ int Firc_Speed=-6000;
 	6000 26.2m/s
 */
 
-uint8_t Motor_Power_Up=0;	//ÅĞ¶Ïµç»úÉÏµç
+uint8_t Motor_Power_Up=0;	//åˆ¤æ–­ç”µæœºä¸Šç”µ
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -310,81 +310,81 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		yaw_nowangle = Yaw_Motor_Angle_Change();
 		pit_nowangle = gear_motor_data[Gimbal_P].angle * Motor_Ecd_to_Ang;
 		
-		switch(remote_control.switch_right)	//ÓÒ²¦¸Ë
+		switch(remote_control.switch_right)	//å³æ‹¨æ†
 		{
-			case 1:	//×ÔÃé
+			case 1:	//è‡ªç„
 			{
 				Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
 				Gimbal_Sotf_Start();
 				Gimbal_Automatic_control();
-				switch(view_shoot_mode)	//²¦µ¯	DD:²»ÏìÓ¦ EE:µÍËÙ·¢Éä FF:¸ßËÙ·¢Éä	
+				switch(view_shoot_mode)	//æ‹¨å¼¹	DD:ä¸å“åº” EE:ä½é€Ÿå‘å°„ FF:é«˜é€Ÿå‘å°„	
 				{
-					case 0xEE:	//¸ßËÙ
+					case 0xEE:	//é«˜é€Ÿ
 						Shoot_Ctrl=2;
 						break;
 					
-					case 0xFF:	//µÍËÙ
+					case 0xFF:	//ä½é€Ÿ
 						Shoot_Ctrl=3;
 						break;
 					
-					default:		//²»·¢Éä
+					default:		//ä¸å‘å°„
 						Shoot_Ctrl=0;
 						break;
 				}
 				switch(remote_control.switch_left)
 				{
-					case 1:	//µ×ÅÌ+Ä¦²ÁÂÖ
+					case 1:	//åº•ç›˜+æ‘©æ“¦è½®
 						Chassic_State=1;
 						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
 						Shoot_Speed_Pid_Calc(Firc_Speed);
 						break;
 					
-					case 3:	//Ä¦²ÁÂÖ
+					case 3:	//æ‘©æ“¦è½®
 						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
 						Shoot_Speed_Pid_Calc(Firc_Speed);
 						break;
 					
 					default:
 						Chassic_State=0;
-						Shoot_Ctrl=0;	//ÎŞÄ¦²ÁÂÖ½ûÖ¹²¦µ¯
+						Shoot_Ctrl=0;	//æ— æ‘©æ“¦è½®ç¦æ­¢æ‹¨å¼¹
 						break;
 				}
 			}
 			break;
 			
-			case 3:	//Ò£¿Ø
+			case 3:	//é¥æ§
 			{
 				Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
 				Gimbal_Sotf_Start();
 				Gimbal_Remote_Control();
-				if(sotf_start==0)		//µÈ´ıÔÆÌ¨»ºÆğÍê³É
+				if(sotf_start==0)		//ç­‰å¾…äº‘å°ç¼“èµ·å®Œæˆ
 				{
-					switch(remote_control.switch_left)	//×ó²¦¸Ë
+					switch(remote_control.switch_left)	//å·¦æ‹¨æ†
 					{
-						case 1:	//Ä¦²ÁÂÖ+²¦µ¯+µ×ÅÌ
+						case 1:	//æ‘©æ“¦è½®+æ‹¨å¼¹+åº•ç›˜
 						{
 							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
 							Shoot_Speed_Pid_Calc(Firc_Speed);
-							Shoot_Ctrl=2;	//¸ßËÙ
+							Shoot_Ctrl=2;	//é«˜é€Ÿ
 							Chassic_State=1;
 						}
 						break;
 						
-						case 3:	//Ä¦²ÁÂÖ+²¦µ¯
+						case 3:	//æ‘©æ“¦è½®+æ‹¨å¼¹
 						{
 							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
 							Shoot_Speed_Pid_Calc(Firc_Speed);
-							Shoot_Ctrl=2;	//¸ßËÙ
+							Shoot_Ctrl=2;	//é«˜é€Ÿ
 							Chassic_State=0;
 						}
 						break;
 						
-						case 2:	//ÎŞ
+						case 2:	//æ— 
 						{
 							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=0;
 							Shoot_Ctrl=0;
 							Chassic_State=0;
-							Shoot_Speed_Pid_Calc(0);	//Ä¦²ÁÂÖ
+							Shoot_Speed_Pid_Calc(0);	//æ‘©æ“¦è½®
 						}
 						break;
 					}
@@ -392,12 +392,12 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			}
 			break;
 			
-			case 2:	//ÎŞ¿ØÖÆ
+			case 2:	//æ— æ§åˆ¶
 			{
 				read_allow = 0;
 				control_allow = 0;
 				sotf_start = 1;
-				Shoot_Speed_Pid_Calc(0);	//Ä¦²ÁÂÖ
+				Shoot_Speed_Pid_Calc(0);	//æ‘©æ“¦è½®
 				Motor_Output[Fric_1]=Motor_Output[Fric_2]=0;
 				Shoot_Ctrl=0;
 				Chassic_State=0;
@@ -428,7 +428,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		else
 			Motor_Output[Fric_2]=0;
 		
-		uint8_t Switch_State=0;	//·¢ËÍÎ¢¶¯¿ª¹Ø×´Ì¬
+		uint8_t Switch_State=0;	//å‘é€å¾®åŠ¨å¼€å…³çŠ¶æ€
 		if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9) == GPIO_PIN_RESET)
 			Switch_State=0;
 		else
