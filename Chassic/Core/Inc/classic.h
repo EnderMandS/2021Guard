@@ -4,10 +4,16 @@
 #include "main.h"
 #include "pid.h"
 
+//#define USE_SPRING
+
 #define Buff_Time 200
-#define Classic_Slow		1000	//Ãé×¼
-#define Classic_Middle	2000	//Ñ²¼ì
-#define Classic_Fast		3000	//ÉÁ±Ü
+#define Classic_Slow		2000	//Ãé×¼
+#define Classic_Middle	4000	//Ñ²¼ì
+#define Classic_Fast		6000	//ÉÁ±Ü
+
+#define Chassic_Spring_Slow		1000
+#define Chassic_Spring_Middle	2000
+#define Chassic_Spring_Fast		3000
 
 #define Motor_Base 0x201
 typedef enum
@@ -32,8 +38,10 @@ extern int Classic_Move_Speed;
 extern uint8_t Moto_ID[2];
 extern uint8_t Aimming;
 extern uint8_t Changing_Speed_Flag;
+extern uint8_t Line;
 
 void Chassis_init(void);
 float Slow_Change_Speed(int dir, uint16_t Speed);
+void Spring(int dir,uint16_t Speed);
 
 #endif

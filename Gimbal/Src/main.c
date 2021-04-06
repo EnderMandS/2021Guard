@@ -36,6 +36,7 @@
 #include "shoot.h"
 #include "classic.h"
 #include "caninfo.h"
+#include "gimbal.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -107,7 +108,7 @@ int main(void)
 	CAN_Filter_Init();
 	Bsp_UART_Receive_IT(&huart3,UART_Buffer,36);   //启动串口接收//遥控
 	Bsp_UART_Receive_IT(&huart1, View_Buf, VIEW_BUF_LEN); //视觉
-//	Bsp_UART_Receive_IT(&huart6,Judgement_Buf,JUDGEMENT_BUF_LEN); //裁判系统
+	Bsp_UART_Receive_IT(&huart6, Groy_Data_Buf, GROY_DATA_BUF_LEN);		//启动串口陀螺仪
 	Shoot_Speed_Pid_Init();
 	HAL_TIM_Base_Start_IT(&htim1);
   /* USER CODE END 2 */
@@ -121,7 +122,8 @@ int main(void)
     /* USER CODE BEGIN 3 */
 		if(extern_view_send_state == 1)
 		{
-			send_pitch.f = pit_nowangle-131.5f;
+			send_pitch.f = pit_nowangle-Pitch_Limit_Top;
+//			send_pitch.f=eular[0];
 			if (yaw_nowangle > 180) {
 				send_yaw.f = -(360 - yaw_nowangle);
 			} else {

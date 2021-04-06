@@ -1,6 +1,7 @@
 #include "classic.h"
 #include "pid.h"
 #include "math.h"
+#include "bsp_can.h"
 
 uint16_t Time_Cnt=0;
 int Last_Dir=0;
@@ -10,6 +11,7 @@ PID_TypeDef motor_pid[2];
 uint8_t Moto_ID[2]={Chassic_L,Chassic_R};
 uint8_t Move_Allow=0;
 int direction=1;
+uint8_t Line=1;
 int eliminate_dithering_left = 0;
 int eliminate_dithering_right = 0;
 int Classic_Move_Speed=Classic_Slow;
@@ -51,29 +53,40 @@ float Slow_Change_Speed(int dir, uint16_t Speed)
 		}
 	}
 	return dir*Speed;
-	
-//	if(dir!=Last_Dir)
+}
+void Spring(int dir,uint16_t Speed)
+{
+//	if(Speed==Chassic_Spring_Slow)	//瞄准到不反弹
 //	{
-//		++Time_Cnt;
-//		if(Time_Cnt<(Buff_Time/2.f))
+//		motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(dir,Speed);
+//		for (uint8_t i=0; i<2; i++)
 //		{
-//			if(Last_Dir==0)
-//				return dir*(Time_Cnt*1.0)/(Buff_Time*1.0)*Speed;
-//			else
-//				return Last_Dir*(Time_Cnt*1.0)*2.f/(Buff_Time*1.0)*Speed;
-//		}
-//		else if(Time_Cnt<Buff_Time)
-//		{
-//			if(Last_Dir==0)
-//				return dir*(Time_Cnt*1.0)/(Buff_Time*1.0)*Speed;
-//			else
-//				return dir*((Time_Cnt*1.0)-(Buff_Time/2.f))/(Buff_Time/2.f)*Speed;
-//		}
-//		else
-//		{
-//			Last_Dir=dir;
-//			Changing_Speed_Flag=Time_Cnt=0;
+//			motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
+//			Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
 //		}
 //	}
-//	return dir*Speed;
+//	else if(dir!=Last_Dir)
+	if(dir!=Last_Dir)
+	{
+		if(Changing_Speed_Flag==1)
+		{
+			for (uint8_t i=0; i<2; i++)
+			{
+				motor_pid[i].target=dir*Speed;
+				motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
+				Motor_Output[ Moto_ID[i] ]=0;
+			}
+		}
+		else
+			dir=Last_Dir;
+	}
+	else
+	{
+		for (uint8_t i=0; i<2; i++)
+		{
+			motor_pid[i].target=dir*Speed;
+			motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
+			Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
+		}
+	}
 }

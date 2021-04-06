@@ -101,14 +101,25 @@ void Gimbal_Receive(uint8_t Receive_Data[8])
 	
 	switch(Receive_Data[3])	// 0:Inspect  1:Aim
 	{
-		case 0:
-			if(Classic_Move_Speed!=Classic_Fast)
-				Classic_Move_Speed=Classic_Middle;
-		break;
-		
-		case 1:
-			Classic_Move_Speed=Classic_Slow;
-		break;
+		#ifndef USE_SPRING
+			case 0:
+				if(Classic_Move_Speed!=Classic_Fast)
+					Classic_Move_Speed=Classic_Middle;
+			break;
+			
+			case 1:
+				Classic_Move_Speed=Classic_Slow;
+			break;
+		#else
+			case 0:
+				if(Classic_Move_Speed!=Chassic_Spring_Fast)
+					Classic_Move_Speed=Chassic_Spring_Middle;
+			break;
+				
+			case 1:
+				Classic_Move_Speed=Chassic_Spring_Slow;
+			break;
+		#endif
 		
 		default:
 			break;

@@ -272,7 +272,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			Switch_State[0]=Switch_State[1]=1;
 		}
 		
-		Power_Heat_Cheak();	//功率&热量超出检测
+//		Power_Heat_Cheak();	//功率&热量超出检测
 		
 		if(Changing_Speed_Flag==0)	//速度反向时不检测光电开关
 		{
@@ -297,17 +297,44 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				}
 			}
 		}
+		#ifdef USE_SPRING
+			else if(Changing_Speed_Flag==1)
+			{
+				if(direction==touch_Left)
+				{
+					if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_SET)
+					{
+						--eliminate_dithering_left;
+						if(eliminate_dithering_left==0)
+							Changing_Speed_Flag=0;
+					}
+				}
+				else if(direction==touch_Right)
+				{
+					if(HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_SET)
+					{
+						--eliminate_dithering_right;
+						if(eliminate_dithering_right==0)
+							Changing_Speed_Flag=0;
+					}
+				}
+			}
+		#endif
+		
 		Check_Being_Hit();	//被击打改变速度方向检测
 		
-//		Move_Allow=0;
 		if(Move_Allow==1)
 		{
-			motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed+Chassic_Speed_Offset);
-			for (uint8_t i=0; i<2; i++)
-			{
-				motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm); //根据设定值进行PID计算。
-				Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
-			}
+			#ifndef USE_SPRING
+				motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed);
+				for (uint8_t i=0; i<2; i++)
+				{
+					motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm); //根据设定值进行PID计算。
+					Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
+				}
+			#else
+				Spring(direction,Classic_Move_Speed);
+			#endif
 		}
 		else
 		{
@@ -380,7 +407,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				Motor_Output[Cartridge]=0;
 			break;
 		}
-		
 		
 		CAN_Motor_Ctrl(&hcan2,Motor_Output);
 	}
