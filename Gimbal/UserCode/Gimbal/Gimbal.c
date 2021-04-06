@@ -126,8 +126,10 @@ void Gimbal_Automatic_control(void)
 	{
 		if(Aimming==1)
 		{
-            vision_target_yaw += (yaw_det_average * 50 * 0.12) / 8.0f;
-			yaw_angle = loop_fp32_constrain(vision_target_yaw,0,360);
+            float pre_yaw;
+            vision_target_yaw += yaw_det_average * 50.0f * 0.0025f;
+            pre_yaw = vision_target_yaw + (yaw_det_average * 50.0f * 0.12f);
+			yaw_angle = loop_fp32_constrain(pre_yaw,0,360);
 			yaw = Control_YawPID(yaw_angle);
             pitch_angle = vision_target_pitch;
 			Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
