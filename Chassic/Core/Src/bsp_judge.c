@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int Chassic_Speed_Offset=0;
 int Cartridge_Speed_Offset=0;
 
 uint32_t Time_cnt=0;

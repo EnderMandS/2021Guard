@@ -297,15 +297,16 @@ void TIM1_UP_TIM10_IRQHandler(void)
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
-	if(Motor_Power_Up==0)
+	if(Motor_Power_Up==0)	//Wait for motor powering up
 	{
 		if(	gear_motor_data[Gimbal_Y].real_current!=0 &&
 				gear_motor_data[Gimbal_P].real_current!=0 &&
 				gear_motor_data[Fric_1].real_current!=0 	&&
-				gear_motor_data[Fric_2].real_current!=0		)
-			Motor_Power_Up=1;
+				gear_motor_data[Fric_2].real_current!=0		&&
+				Hi229_Update!=0	)
+				Motor_Power_Up=1;
 	}
-	else
+	else	//working
 	{
 		yaw_nowangle = Yaw_Motor_Angle_Change();
 		pit_nowangle = gear_motor_data[Gimbal_P].angle * Motor_Ecd_to_Ang;
@@ -538,7 +539,7 @@ void USART6_IRQHandler(void)
   /* USER CODE END USART6_IRQn 0 */
   HAL_UART_IRQHandler(&huart6);
   /* USER CODE BEGIN USART6_IRQn 1 */
-	Dma_UsartIdleHanlder(&huart6, JUDGEMENT_BUF_LEN);
+	Dma_UsartIdleHanlder(&huart6, GROY_DATA_BUF_LEN);
   /* USER CODE END USART6_IRQn 1 */
 }
 

@@ -16,8 +16,12 @@ uint8_t view_send_state;
 uint8_t Judgement_Buf[JUDGEMENT_BUF_LEN];
 uint8_t View_Buf[VIEW_BUF_LEN];
 uint8_t rx_view_buf[24];
-uint8_t rx_judge_buf[200];
+uint8_t rxbuf[200];
+uint8_t Groy_Data_Buf[GROY_DATA_BUF_LEN];
 uint8_t UART_Buffer[36];
+float eular[3]; //欧拉角 eular[0]==Pitch eular[1]==Roll eular[2]==Yaw 
+int16_t gyo[3];
+uint8_t Hi229_Update=0;
 uint8_t view_shoot_mode ;
 float2uchar pitchangle;
 float2uchar yawangle;
@@ -73,11 +77,19 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 			}
 		}
 	}
-	//裁判系统串口
-	else if (huart == &huart6)
+	else if (huart == &huart6)					/*串口陀螺仪Hi229*/
 	{
-		memcpy(&rx_judge_buf, Judgement_Buf, 200); //数据长度
-		Judge_Read_Data(Judgement_Buf);
+		memcpy(&rxbuf,Groy_Data_Buf,200);	//数据长度
+		if(rxbuf[0]==0x5A&&rxbuf[1]==0xA5&&rxbuf[6]==0xB0&&rxbuf[13]==0xD0)
+		{
+			Hi229_Update=1;
+			eular[0] = ((float)(int16_t)(rxbuf[14] + (rxbuf[15]<<8)))/100;	//pitch
+			eular[1] = ((float)(int16_t)(rxbuf[16] + (rxbuf[17]<<8)))/100;
+			eular[2] = (((float)(int16_t)(rxbuf[18] + (rxbuf[19]<<8)))/10);	//Yaw轴
+			gyo[0] =  (int16_t)(rxbuf[7] + (rxbuf[8]<<8));
+			gyo[1] =  (int16_t)(rxbuf[9] + (rxbuf[10]<<8));
+			gyo[2] =  (int16_t)(rxbuf[11] + (rxbuf[12]<<8));
+		}
 	}
 }
 

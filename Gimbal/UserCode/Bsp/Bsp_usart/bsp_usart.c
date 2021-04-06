@@ -3,8 +3,6 @@
 #include "usartinfo.h"
 #include "string.h"
 
-
-
 __weak void UART_IdleRxCallback(UART_HandleTypeDef *huart){}
 
 /**
@@ -35,7 +33,7 @@ void Dma_UsartIdleHanlder(UART_HandleTypeDef *huart,uint16_t Size)
 	}
 	else if(huart == &huart6)
 	{
-		memset(&Judgement_Buf,0,JUDGEMENT_BUF_LEN); //Çå³ý
+		memset(&Groy_Data_Buf,0,GROY_DATA_BUF_LEN); //´®¿ÚÍÓÂÝÒÇ£¬Çå³ý
 	}
 		DMA_FLAGS = __HAL_DMA_GET_TC_FLAG_INDEX(huart->hdmarx);	
 		__HAL_DMA_CLEAR_FLAG(huart->hdmarx,DMA_FLAGS);

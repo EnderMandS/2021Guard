@@ -21,6 +21,7 @@
 #include <math.h>
 #include "caninfo.h"
 #include "Gimbal.h"
+#include "usartinfo.h"
 
 #define ABS(x) ((x > 0) ? x : -x)
 /*参数初始化--------------------------------------------------------------*/
@@ -120,21 +121,37 @@ void pid_init(PID_TypeDef *pid)
 
 //imu.wz是Yaw的速度，imu.wx是Pitch的速度，imu.wy是rol的速度
 
+//#define Pitch_PID1
+
+#ifdef Pitch_PID1
 float PitchOPIDP = 5;
 float PitchOPIDI = 0.07;
 float PitchOPIDD = 10;
+#else
+float PitchOPIDP = 5;
+float PitchOPIDI = 0.03;
+float PitchOPIDD = 10;
+#endif
+
 float PitchOPIDCurrentError = 0;
 float PitchOPIDLastError = 0;
 float PitchOPIDIMax = 200;
-float PitchOPIDPIDMax = 15000;
+float PitchOPIDPIDMax = 30000;
 float PitchOPIDPout;
 float PitchOPIDIout;
 float PitchOPIDDout;
 float PitchOPIDPIDout;
 
+#ifdef Pitch_PID1
 float PitchIPIDP = 150;
 float PitchIPIDI = 0;
 float PitchIPIDD = 10;
+#else
+float PitchIPIDP = 350;
+float PitchIPIDI = 0;
+float PitchIPIDD = 10;
+#endif
+
 float PitchIPIDCurrentError = 0;
 float PitchIPIDLastError = 0;
 float PitchIPIDIMax = 0;
@@ -219,8 +236,8 @@ float Control_PitchPID(float Target)
 	}
 	PitchOPIDPout = PitchOPIDP * PitchOPIDCurrentError;
 	PitchOPIDIout += PitchOPIDI * PitchOPIDCurrentError;
-	LimitMax(PitchOPIDIout, PitchOPIDIMax)
-		PitchOPIDDout = -PitchOPIDD * (gear_motor_data[Gimbal_P].speed_rpm * 2 * PI / 60);
+	LimitMax(PitchOPIDIout, PitchOPIDIMax);
+	PitchOPIDDout = -PitchOPIDD * (gear_motor_data[Gimbal_P].speed_rpm * 2 * PI / 60);
 	PitchOPIDPIDout = PitchOPIDPout + PitchOPIDIout + PitchOPIDDout;
 	LimitMax(PitchOPIDPIDout, PitchOPIDPIDMax)
 		PitchOPIDLastError = PitchOPIDCurrentError;
