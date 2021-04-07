@@ -36,7 +36,7 @@ void Chassis_init(void)
     set_spd[1] = 0;
 }
 
-float Slow_Change_Speed(__IO int dir, uint16_t Speed)
+float Slow_Change_Speed(int dir, uint16_t Speed)
 {
 	switch(Speed)
 	{

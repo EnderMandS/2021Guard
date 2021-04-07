@@ -15,7 +15,13 @@
 
 #define Inspect_Empty				1
 #define Pitch_Inspect_Speed	0.08f
-#define Yaw_Inspect_Speed		0.175f
+#define Yaw_Inspect_Speed		0.15f
+#define Yaw_Inspect_Speed_Offset	0.05f
+
+//#define Limit_Yaw
+
+#define Yaw_Limit_Min 257.6f
+#define Yaw_Limit_Max	359.f
 
 float Pitch_Limit_Top = 121.52448f; //2788	121.52448f
 float Pitch_Limit_Bottom = 75.85f;  //61.53f	75.85f
@@ -27,6 +33,7 @@ int sotf_start = 1;
 int control_allow = 0;
 int read_allow = 0;
 int Pitch_dir=1;
+int Yaw_dir=1;
 uint8_t Set_Zero=0;
 bool Set_Zero_Complete=false;
 
@@ -97,8 +104,22 @@ void Gimbal_Sotf_Start(void)
 			{
 				pitch_angle -= 0.05f;
 			}
+			#ifdef Limit_Yaw
+				if (yaw_angle < yaw_center)
+				{
+					yaw_angle += 0.05f;
+				}
+				else if (yaw_angle > yaw_center)
+				{
+					yaw_angle -= 0.05f;
+				}
+			#endif
 		}
-		if ((pitch_angle < Pitch_Limit_Top + 0.5f && pitch_angle > Pitch_Limit_Top - 0.5f) )
+		#ifdef Limit_Yaw
+			if ( (pitch_angle < Pitch_Limit_Top + 0.5f && pitch_angle > Pitch_Limit_Top - 0.5f) && (yaw_angle < yaw_center + 0.5f && yaw_angle > yaw_center - 0.5f) )
+		#else
+			if ( (pitch_angle < Pitch_Limit_Top + 0.5f && pitch_angle > Pitch_Limit_Top - 0.5f) )
+		#endif
 		{
 			if(Set_Zero_Complete==false)
 			{
@@ -136,7 +157,11 @@ void Gimbal_Remote_Control(void)
 			pitch_angle += 0.0005f * first_order_filter_Y_cali(remote_control.ch4);
 			yaw_angle += 0.001f * first_order_filter_X_cali(remote_control.ch3);
 	}
-	yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
+	#ifndef Limit_Yaw
+		yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
+	#else
+		Limit(yaw_angle,Yaw_Limit_Min,Yaw_Limit_Max);
+	#endif
 	yaw = Control_YawPID(yaw_angle);
 	Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
 	pitch = Control_PitchPID(pitch_angle);
@@ -151,7 +176,12 @@ void Gimbal_Automatic_control(void)
             float pre_yaw;
             vision_target_yaw += yaw_det_average * 50.0f * 0.0025f;
             pre_yaw = vision_target_yaw + (yaw_det_average * 50.0f * 0.12f);
-			yaw_angle = loop_fp32_constrain(pre_yaw,0,360);
+			#ifndef Limit_Yaw
+				yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
+			#else
+				yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
+				Limit(yaw_angle,Yaw_Limit_Min,Yaw_Limit_Max);
+			#endif
 			yaw = Control_YawPID(yaw_angle);
             pitch_angle = vision_target_pitch;
 			Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
@@ -217,15 +247,31 @@ void Gimbal_Inspect(void)	//巡检
 	if(Pitch_dir==1)
 		if(pitch_angle>=Pitch_Limit_Top-Inspect_Empty)
 			Pitch_dir=-1;
-		
 	if(Pitch_dir==-1)
 		if(pitch_angle<=Pitch_Limit_Bottom+Inspect_Empty)
 			Pitch_dir=1;
-		
 	pitch_angle += Pitch_dir*Pitch_Inspect_Speed;
-	yaw_angle += Yaw_Inspect_Speed;
-	yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
+		
+	#ifndef Limit_Yaw
+		yaw_angle += Yaw_Inspect_Speed;
+		yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
+		if( (yaw_angle>Yaw_Limit_Min && yaw_angle<Yaw_Limit_Max) || (0) )
+				yaw_angle-=Yaw_Inspect_Speed_Offset;
+	#else
+		if(Yaw_dir==1)
+			if(yaw_angle>=Yaw_Limit_Max-Inspect_Empty)
+				Yaw_dir=-1;
+		if(Yaw_dir==-1)
+			if(yaw_angle<=Yaw_Limit_Min+Inspect_Empty)
+				Yaw_dir=1;
+		yaw_angle += Yaw_dir*Yaw_Inspect_Speed;
+		if(Yaw_dir==Chassic_Dir && Chassic_Dir==Chassic_Last_Dir)
+			yaw_angle-=Chassic_Dir*Yaw_Inspect_Speed_Offset;
+		Limit(yaw_angle,Yaw_Limit_Min,Yaw_Limit_Max);
+	#endif
+
 	yaw = Control_YawPID(yaw_angle);
+	Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
 	pitch = Control_PitchPID(pitch_angle);
 }
 
@@ -283,10 +329,21 @@ bool Set_Pitch_Zero_Point(void)	//采样取平均确定Pitch零点
 			}
 			Gyto_Average/=(Sampling_Times*1.f);		//向下递增
 			Motor_Average/=(Sampling_Times*1.f);	//向下递减
-			Motor_Average*=Motor_Ecd_to_Ang;
-			Pitch_Limit_Top+=Gyto_Average+Motor_Average-Pitch_Limit_Top;	//+偏移
+			Pitch_Limit_Top+=Gyto_Average+Motor_Average*Motor_Ecd_to_Ang-Pitch_Limit_Top;	//+偏移
 			return true;
 		}
 	}
 	return false;
+}
+
+void Avoid_Wall(void)
+{
+	if(Chassic_Dir!=Chassic_Last_Dir && Chassic_Dir==1)
+	{
+		if(yaw_nowangle>168.8f && yaw_nowangle<257.6f)
+		{
+			pitch_angle=Pitch_Limit_Bottom;
+			pitch = Control_PitchPID(pitch_angle);
+		}
+	}
 }

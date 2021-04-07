@@ -304,8 +304,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				{
 					if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_SET)
 					{
-//						--eliminate_dithering_left;
-//						if(eliminate_dithering_left==0)
 							Changing_Speed_Flag=0;
 					}
 				}
@@ -313,8 +311,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				{
 					if(HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_SET)
 					{
-//						--eliminate_dithering_right;
-//						if(eliminate_dithering_right==0)
 							Changing_Speed_Flag=0;
 					}
 				}
@@ -408,6 +404,12 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		}
 		
 		CAN_Motor_Ctrl(&hcan2,Motor_Output);
+		
+		uint8_t Data[8]={0};
+		Data[0]=is_red_or_blue();
+		Data[1]=direction;
+		Data[2]=Last_Dir;
+		CAN_Send_Gimbal(&hcan1,Data,sizeof(Data));
 	}
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
 }
@@ -425,10 +427,7 @@ void TIM2_IRQHandler(void)
 //	if(Motor_Power_Up!=0)
 //		Empty_Bullet();
 	
-	uint8_t Data[8]={0};
-	memcpy(Data,&Fric_Speed,4);
-	Data[4]=is_red_or_blue();
-	CAN_Send_Gimbal(&hcan1,Data,5);
+	
   /* USER CODE END TIM2_IRQn 1 */
 }
 

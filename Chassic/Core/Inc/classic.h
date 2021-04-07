@@ -4,7 +4,7 @@
 #include "main.h"
 #include "pid.h"
 
-//#define USE_SPRING
+#define USE_SPRING
 
 #define Classic_Slow		2000	//Ãé×¼
 #define Classic_Middle	4500	//Ñ²¼ì
@@ -38,6 +38,7 @@ extern uint8_t Moto_ID[2];
 extern uint8_t Aimming;
 extern uint8_t Changing_Speed_Flag;
 extern uint8_t Line;
+extern int Last_Dir;
 
 void Chassis_init(void);
 float Slow_Change_Speed(int dir, uint16_t Speed);

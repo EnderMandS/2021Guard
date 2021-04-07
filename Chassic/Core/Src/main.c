@@ -108,7 +108,7 @@ int main(void)
 	Chassis_init();
 	gear_moto_position_pid_init();
 	HAL_TIM_Base_Start_IT(&htim1);
-	HAL_TIM_Base_Start_IT(&htim2);
+//	HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE END 2 */
 
   /* Infinite loop */

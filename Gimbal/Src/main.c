@@ -41,12 +41,13 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-uint8_t Send_Position_Buf[11];
+uint8_t Send_Position_Buf[12];
 uint8_t color=0;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -132,8 +133,11 @@ int main(void)
 			Send_Position_Buf[0] = 0x5A;
 			memcpy(Send_Position_Buf+1,send_pitch.c,4);
 			memcpy(Send_Position_Buf+5,send_yaw.c,4);
-			Send_Position_Buf[9] = color;
-			Send_Position_Buf[10] = 0xA5;
+			Send_Position_Buf[9]=(25.f-10)*10;	//shoot_velocity=(射速-10)*10
+			Send_Position_Buf[10] = color;
+			Send_Position_Buf[11] = 0xA5;
+//			Send_Position_Buf[9] = color;
+//			Send_Position_Buf[10] = 0xA5;
 			Uart1_TransmissionT_Data(Send_Position_Buf,COUNTOF(Send_Position_Buf));
 			extern_view_send_state = 0;
 		}
