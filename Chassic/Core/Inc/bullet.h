@@ -14,6 +14,5 @@
 extern uint8_t Switch_State[2];
 
 void Updata_Switch_State(void);
-uint8_t Enough_Heat(void);
 
 #endif

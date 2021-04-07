@@ -14,8 +14,8 @@
 #include "usartinfo.h"
 
 #define Inspect_Empty				1
-#define Pitch_Inspect_Speed	0.15f
-#define Yaw_Inspect_Speed		0.1f
+#define Pitch_Inspect_Speed	0.08f
+#define Yaw_Inspect_Speed		0.175f
 
 float Pitch_Limit_Top = 121.52448f; //2788	121.52448f
 float Pitch_Limit_Bottom = 75.85f;  //61.53f	75.85f

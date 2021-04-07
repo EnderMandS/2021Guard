@@ -22,14 +22,3 @@ void Updata_Switch_State(void)
 		break;
 	}
 }
-uint8_t Enough_Heat(void)
-{
-	int Heat_Rest=GameRobotStat.shooter_id1_17mm_cooling_limit-PowerHeatData.shooter_id1_17mm_cooling_heat;
-	if(Heat_Rest>50)
-		return 3;
-	if(Heat_Rest>30)
-		return 2;
-	if(Heat_Rest>10)
-		return 1;
-	return 0;
-}

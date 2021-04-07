@@ -304,8 +304,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				{
 					if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_SET)
 					{
-						--eliminate_dithering_left;
-						if(eliminate_dithering_left==0)
+//						--eliminate_dithering_left;
+//						if(eliminate_dithering_left==0)
 							Changing_Speed_Flag=0;
 					}
 				}
@@ -313,15 +313,15 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				{
 					if(HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_SET)
 					{
-						--eliminate_dithering_right;
-						if(eliminate_dithering_right==0)
+//						--eliminate_dithering_right;
+//						if(eliminate_dithering_right==0)
 							Changing_Speed_Flag=0;
 					}
 				}
 			}
 		#endif
 		
-		Check_Being_Hit();	//被击打改变速度方向检测
+		Check_Being_Hit();	//被击打改变速度
 		
 		if(Move_Allow==1)
 		{
@@ -352,7 +352,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		else if(Heat_Rest<100)
 			Shoot_Ultra_Mode=0;
 		
-//		Shoot_State=0;
 		switch(Shoot_State)	//射击模式
 		{
 			case 1:		//Single
@@ -423,6 +422,9 @@ void TIM2_IRQHandler(void)
   /* USER CODE END TIM2_IRQn 0 */
   HAL_TIM_IRQHandler(&htim2);
   /* USER CODE BEGIN TIM2_IRQn 1 */
+//	if(Motor_Power_Up!=0)
+//		Empty_Bullet();
+	
 	uint8_t Data[8]={0};
 	memcpy(Data,&Fric_Speed,4);
 	Data[4]=is_red_or_blue();

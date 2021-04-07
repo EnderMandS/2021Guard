@@ -52,8 +52,9 @@ uint16_t Judge_SelfClient_ID;//发送者机器人对应的客户端ID
 
 /**************裁判系统数据辅助****************/
 uint16_t ShootNum;//统计发弹量,0x0003触发一次则认为发射了一颗
-bool Hurt_Data_Update = FALSE;//装甲板伤害数据是否更新,每受一次伤害置TRUE,然后立即置FALSE,给底盘闪避用
+bool Hurt_Data_Update = false;//装甲板伤害数据是否更新,每受一次伤害置TRUE,然后立即置FALSE,给底盘闪避用
 bool Power_Heat_Data_Updata=false;
+bool Shoot_Update=false;
 float Max_Shoot_Speed=0;
 float Max_Chassic_Power=0;
 
@@ -165,12 +166,13 @@ bool Judge_Read_Data(uint8_t *ReadFromUsart)
 						memcpy(&RobotHurt, (ReadFromUsart + DATA), LEN_robot_hurt);
 						if(RobotHurt.hurt_type == 0)//非装甲板离线造成伤害
 						{	//装甲数据每更新一次则判定为受到一次伤害
-							Hurt_Data_Update = TRUE;
+							Hurt_Data_Update = true;
 						}
 					break;
 					
 					case ID_shoot_data:      			//0x0207//实时射击数据
 						memcpy(&ShootData, (ReadFromUsart + DATA), LEN_shoot_data);
+						Shoot_Update=true;
 						if(Max_Shoot_Speed<ShootData.bullet_speed)
 							Max_Shoot_Speed=ShootData.bullet_speed;
 					break;

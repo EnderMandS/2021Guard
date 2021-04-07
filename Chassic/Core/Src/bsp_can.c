@@ -3,6 +3,7 @@
 #include "classic.h"
 #include "shoot.h"
 #include "bullet.h"
+#include "bsp_judge.h"
 #include <string.h>
 
 #define ABS(x) ((x > 0) ? x : -x)
@@ -26,7 +27,6 @@ void CAN_Filter_Init(void)
   HAL_CAN_ConfigFilter(&hcan1, &CAN_Filter_STM);
   HAL_CAN_Start(&hcan1);
   HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
-
 
   CAN_Filter_STM.SlaveStartFilterBank = 14;
   CAN_Filter_STM.FilterBank = 14;
@@ -99,32 +99,34 @@ void Gimbal_Receive(uint8_t Receive_Data[8])
 	
 	Switch_State[1]=Receive_Data[2];
 	
-	switch(Receive_Data[3])	// 0:Inspect  1:Aim
+	if(No_Bullet==false)
 	{
-		#ifndef USE_SPRING
-			case 0:
-				if(Classic_Move_Speed!=Classic_Fast)
-					Classic_Move_Speed=Classic_Middle;
-			break;
-			
-			case 1:
-				Classic_Move_Speed=Classic_Slow;
-			break;
-		#else
-			case 0:
-				if(Classic_Move_Speed!=Chassic_Spring_Fast)
-					Classic_Move_Speed=Chassic_Spring_Middle;
-			break;
+		switch(Receive_Data[3])	// 0:Inspect  1:Aim
+		{
+			#ifndef USE_SPRING		//ÎÞµ¯»É
+				case 0:
+					if(Classic_Move_Speed!=Classic_Fast)
+						Classic_Move_Speed=Classic_Middle;
+				break;
 				
-			case 1:
-				Classic_Move_Speed=Chassic_Spring_Slow;
-			break;
-		#endif
-		
-		default:
-			break;
+				case 1:
+					Classic_Move_Speed=Classic_Slow;
+				break;
+			#else		//µ¯»É
+				case 0:
+					if(Classic_Move_Speed!=Chassic_Spring_Fast)
+						Classic_Move_Speed=Chassic_Spring_Middle;
+				break;
+					
+				case 1:
+					Classic_Move_Speed=Chassic_Spring_Slow;
+				break;
+			#endif
+			
+			default:
+				break;
+		}
 	}
-		
 }
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {

@@ -135,7 +135,7 @@ float PitchOPIDD = 10;
 
 float PitchOPIDCurrentError = 0;
 float PitchOPIDLastError = 0;
-float PitchOPIDIMax = 200;
+float PitchOPIDIMax = 30;
 float PitchOPIDPIDMax = 30000;
 float PitchOPIDPout;
 float PitchOPIDIout;

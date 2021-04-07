@@ -3,6 +3,8 @@
 #include "math.h"
 #include "bsp_can.h"
 
+int Buff_Time=200;
+
 uint16_t Time_Cnt=0;
 int Last_Dir=0;
 
@@ -34,13 +36,31 @@ void Chassis_init(void)
     set_spd[1] = 0;
 }
 
-float Slow_Change_Speed(int dir, uint16_t Speed)
+float Slow_Change_Speed(__IO int dir, uint16_t Speed)
 {
+	switch(Speed)
+	{
+		case Classic_Slow:
+			Buff_Time=400;
+		break;
+		
+		case Classic_Middle:
+			Buff_Time=200;
+		break;
+		
+		case Classic_Fast:
+			Buff_Time=150;
+		break;
+		
+		default:
+			Buff_Time=150;
+		break;
+	}
 	if(dir!=Last_Dir)
 	{
 		++Time_Cnt;
 		if(Time_Cnt<Buff_Time)
-		{  
+		{
 			if(Last_Dir==0)
 				return dir*sin( (Time_Cnt*1.0)/Buff_Time*PI*0.5 )*Speed;
 			else
@@ -54,31 +74,52 @@ float Slow_Change_Speed(int dir, uint16_t Speed)
 	}
 	return dir*Speed;
 }
+
 void Spring(int dir,uint16_t Speed)
 {
-//	if(Speed==Chassic_Spring_Slow)	//瞄准到不反弹
-//	{
-//		motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(dir,Speed);
-//		for (uint8_t i=0; i<2; i++)
-//		{
-//			motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
-//			Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
-//		}
-//	}
-//	else if(dir!=Last_Dir)
-	if(dir!=Last_Dir)
+	if(Speed==Chassic_Spring_Slow)	//瞄准到不反弹
 	{
-		if(Changing_Speed_Flag==1)
+		motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(dir,Speed);
+		for (uint8_t i=0; i<2; i++)
 		{
-			for (uint8_t i=0; i<2; i++)
-			{
-				motor_pid[i].target=dir*Speed;
-				motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
-				Motor_Output[ Moto_ID[i] ]=0;
-			}
+			motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
+			Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
 		}
-		else
-			dir=Last_Dir;
+		return;
+	}
+	else if(dir!=Last_Dir)
+//	if(dir!=Last_Dir)
+	{
+		if(Last_Dir==1)
+		{
+			if(gear_motor_data[Moto_ID[0]].speed_rpm>0)
+			{
+				for (uint8_t i=0; i<2; i++)
+				{
+//					motor_pid[i].target=0;
+//					motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
+					Motor_Output[ Moto_ID[i] ]=0;
+				}
+			}
+			else
+				Last_Dir=dir;
+			return;
+		}
+		else if(Last_Dir==-1)
+		{
+			if(gear_motor_data[Moto_ID[0]].speed_rpm<0)
+			{
+				for(uint8_t i=0; i<2; i++)
+				{
+//					motor_pid[i].target=0;
+//					motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
+					Motor_Output[ Moto_ID[i] ]=0;
+				}
+			}
+			else
+				Last_Dir=dir;
+			return;
+		}
 	}
 	else
 	{

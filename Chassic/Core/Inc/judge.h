@@ -1278,6 +1278,7 @@ extern	xFrameHeader             			FrameHeader;		//发送帧头信息
 
 extern bool Hurt_Data_Update;
 extern bool Power_Heat_Data_Updata;
+extern bool Shoot_Update;
 
 bool Judge_Read_Data(uint8_t *ReadFromUsart);
 void JUDGE_Show_Data(void);
