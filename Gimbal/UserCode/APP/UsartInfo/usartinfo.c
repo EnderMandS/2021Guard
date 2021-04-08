@@ -48,28 +48,31 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 		memcpy(&rx_view_buf, View_Buf, 100); //数据长度rx_view_buf
 		if (rx_view_buf[0] == 0xAF && rx_view_buf[11] == 0xFA)	//标识符
 		{
-			switch(rx_view_buf[1])	//命令位 
+			switch (rx_view_buf[1]) //命令位
 			{
-				case 0xAA:
-					view_send_state = 1;
-					Aimming=0;
-					break;
-				
-				case 0xBB:
-					view_send_state = 2;
-					extern_view_send_state = 1;
-					break;
-				
-				case 0xCC:
-					view_send_state = 3;
-					Aimming=1;
-					view_shoot_mode = rx_view_buf[2];	//射击指令
-					break;
-				
-				default:
-					break;
+			case 0xAA:
+				view_send_state = 1;
+				Aimming = 0;
+				Gimbal_Inspect_setSpeed(Gimbal_Inspect_SPEED_FAST);
+				break;
+			case 0xDD:
+				view_send_state = 1;
+				Aimming = 0;
+				Gimbal_Inspect_setSpeed(Gimbal_Inspect_SPEED_SLOW);
+				break;
+			case 0xBB:
+				view_send_state = 2;
+				extern_view_send_state = 1;
+				break;
+			case 0xCC:
+				view_send_state = 3;
+				Aimming = 1;
+				view_shoot_mode = rx_view_buf[2]; //射击指令
+				break;
+			default:
+				break;
 			}
-				
+
 			if(remote_control.switch_right==1 && view_send_state==3 )
 			{
 				memcpy(pitchangle.c, rx_view_buf + 3, 4);
