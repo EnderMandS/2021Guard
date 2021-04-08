@@ -136,8 +136,6 @@ int main(void)
 			Send_Position_Buf[9]=(25.f-10)*10;	//shoot_velocity=(射速-10)*10
 			Send_Position_Buf[10] = color;
 			Send_Position_Buf[11] = 0xA5;
-//			Send_Position_Buf[9] = color;
-//			Send_Position_Buf[10] = 0xA5;
 			Uart1_TransmissionT_Data(Send_Position_Buf,COUNTOF(Send_Position_Buf));
 			extern_view_send_state = 0;
 		}

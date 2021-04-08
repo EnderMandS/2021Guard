@@ -2,6 +2,7 @@
 #include "pid.h"
 #include "math.h"
 #include "bsp_can.h"
+#include <stdbool.h>
 
 int Buff_Time=200;
 
@@ -75,20 +76,23 @@ float Slow_Change_Speed(int dir, uint16_t Speed)
 	return dir*Speed;
 }
 
+#define Wait_Cnt 20		//检测到电机反转之后等待时间 实际时间=Wait_Cnt/200Hz
+bool Dir_Change_Wait=false;
+uint8_t Dir_Change_Wait_Cnt=0;
 void Spring(int dir,uint16_t Speed)
 {
-	if(Speed==Chassic_Spring_Slow)	//瞄准到不反弹
-	{
-		motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(dir,Speed);
-		for (uint8_t i=0; i<2; i++)
-		{
-			motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
-			Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
-		}
-		return;
-	}
-	else if(dir!=Last_Dir)
-//	if(dir!=Last_Dir)
+//	if(Speed==Chassic_Spring_Slow)	//瞄准到不反弹
+//	{
+//		motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(dir,Speed);
+//		for (uint8_t i=0; i<2; i++)
+//		{
+//			motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
+//			Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
+//		}
+//		return;
+//	}
+//	else if(dir!=Last_Dir)
+	if(dir!=Last_Dir)
 	{
 		if(Last_Dir==1)
 		{
@@ -102,7 +106,10 @@ void Spring(int dir,uint16_t Speed)
 				}
 			}
 			else
+			{
+				Dir_Change_Wait=true;
 				Last_Dir=dir;
+			}
 			return;
 		}
 		else if(Last_Dir==-1)
@@ -117,17 +124,32 @@ void Spring(int dir,uint16_t Speed)
 				}
 			}
 			else
+			{
+				Dir_Change_Wait=true;
 				Last_Dir=dir;
+			}
 			return;
 		}
 	}
 	else
 	{
-		for (uint8_t i=0; i<2; i++)
+		if(Dir_Change_Wait==true)
 		{
-			motor_pid[i].target=dir*Speed;
-			motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
-			Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
+			++Dir_Change_Wait_Cnt;
+			if(Dir_Change_Wait_Cnt>=Wait_Cnt)
+			{
+				Dir_Change_Wait_Cnt=0;
+				Dir_Change_Wait=false;
+			}
+		}
+		else
+		{
+			for (uint8_t i=0; i<2; i++)
+			{
+				motor_pid[i].target=dir*Speed;
+				motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
+				Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
+			}
 		}
 	}
 }

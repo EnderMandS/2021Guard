@@ -115,7 +115,11 @@ void Gimbal_Sotf_Start(void)
 				}
 			#endif
 		}
-		if ((pitch_angle < Pitch_Limit_Top + 0.5f && pitch_angle > Pitch_Limit_Top - 0.5f))
+		#ifdef Limit_Yaw
+			if ((pitch_angle < Pitch_Limit_Top + 0.5f && pitch_angle > Pitch_Limit_Top - 0.5f)&&(yaw_angle < yaw_center + 0.5f && yaw_angle > yaw_center - 0.5f))
+		#else
+			if ((pitch_angle < Pitch_Limit_Top + 0.5f && pitch_angle > Pitch_Limit_Top - 0.5f))
+		#endif
 		{
 			if (Set_Zero_Complete == false)
 			{
@@ -154,6 +158,9 @@ void Gimbal_Remote_Control(void)
 		yaw_angle += 0.001f * first_order_filter_X_cali(remote_control.ch3);
 	}
 	yaw_angle = loop_fp32_constrain(yaw_angle, 0, 360);
+	#ifdef Limit_Yaw
+		Limit(yaw_angle, Yaw_Limit_Min, Yaw_Limit_Max);
+	#endif
 	yaw = Control_YawPID(yaw_angle);
 	Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
 	pitch = Control_PitchPID(pitch_angle);
@@ -178,6 +185,9 @@ void Gimbal_Automatic_control(void)
 				pre_yaw = yaw_angle - 0.1f;
 			}
 			yaw_angle = loop_fp32_constrain(pre_yaw, 0, 360);
+			#ifdef Limit_Yaw
+				Limit(yaw_angle, Yaw_Limit_Min, Yaw_Limit_Max);
+			#endif
 			yaw = Control_YawPID(yaw_angle);
 
 			if (vision_target_pitch - pitch_angle > 0.5f)

@@ -69,10 +69,11 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 				default:
 					break;
 			}
-			memcpy(pitchangle.c, rx_view_buf + 3, 4);
-			memcpy(yawangle.c, rx_view_buf + 7, 4);
+				
 			if(remote_control.switch_right==1 && view_send_state==3 )
 			{
+				memcpy(pitchangle.c, rx_view_buf + 3, 4);
+				memcpy(yawangle.c, rx_view_buf + 7, 4);
 				Gimbal_Automatic_target(pitchangle.f, yawangle.f);
 			}
 		}
