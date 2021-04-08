@@ -18,7 +18,7 @@
 #define Yaw_Inspect_Speed		0.15f
 #define Yaw_Inspect_Speed_Offset	0.05f
 
-//#define Limit_Yaw
+#define Limit_Yaw
 
 #define Yaw_Limit_Min 257.6f
 #define Yaw_Limit_Max	359.f
@@ -327,8 +327,8 @@ bool Set_Pitch_Zero_Point(void)	//采样取平均确定Pitch零点
 				Gyto_Average+=Pitch_Gyro_Buf[cnt];
 				Motor_Average+=Pitch_Motor_Buf[cnt];
 			}
-			Gyto_Average/=(Sampling_Times*1.f);		//向下递增
-			Motor_Average/=(Sampling_Times*1.f);	//向下递减
+			Gyto_Average/=(Sampling_Times*1.f);
+			Motor_Average/=(Sampling_Times*1.f);
 			Pitch_Limit_Top+=Gyto_Average+Motor_Average*Motor_Ecd_to_Ang-Pitch_Limit_Top;	//+偏移
 			return true;
 		}
