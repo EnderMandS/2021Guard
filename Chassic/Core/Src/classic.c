@@ -100,8 +100,8 @@ void Spring(int dir,uint16_t Speed)
 			{
 				for (uint8_t i=0; i<2; i++)
 				{
-//					motor_pid[i].target=0;
-//					motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
+					motor_pid[i].target=dir*Speed;
+					motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
 					Motor_Output[ Moto_ID[i] ]=0;
 				}
 			}
@@ -118,8 +118,8 @@ void Spring(int dir,uint16_t Speed)
 			{
 				for(uint8_t i=0; i<2; i++)
 				{
-//					motor_pid[i].target=0;
-//					motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
+					motor_pid[i].target=dir*Speed;
+					motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
 					Motor_Output[ Moto_ID[i] ]=0;
 				}
 			}

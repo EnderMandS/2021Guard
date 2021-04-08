@@ -47,7 +47,7 @@ void Check_Being_Hit(void)	//受到伤害加速	200Hz
 		{
 			Being_Hit=1;
 //			SpeedUp_Time=(rand()%3+1)*200;	//1-3s 200Hz
-			SpeedUp_Time=3*200;
+			SpeedUp_Time=3*200;		//3秒
 			if(PowerHeatData.chassis_power_buffer>75)
 			{
 				if(Classic_Move_Speed==Chassic_Spring_Middle)

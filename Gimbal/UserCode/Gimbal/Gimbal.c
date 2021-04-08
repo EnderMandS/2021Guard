@@ -14,8 +14,8 @@
 #include "usartinfo.h"
 
 #define Inspect_Empty 1
-float Pitch_Inspect_Speed = 0.08f;
-float Yaw_Inspect_Speed = 0.15f;
+float Pitch_Inspect_Speed = 0.1f;	//0.08
+float Yaw_Inspect_Speed = 0.18f;	//0.15
 #define Yaw_Inspect_Speed_Offset 0.025f
 
 #define Limit_Yaw

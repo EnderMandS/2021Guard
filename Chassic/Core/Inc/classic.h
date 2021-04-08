@@ -6,11 +6,11 @@
 
 #define USE_SPRING
 
-#define Classic_Slow		2000	//Ãé×¼
+#define Classic_Slow		1500	//Ãé×¼
 #define Classic_Middle	4500	//Ñ²¼ì
 #define Classic_Fast		8000	//ÉÁ±Ü
 
-#define Chassic_Spring_Slow		2000
+#define Chassic_Spring_Slow		1500
 #define Chassic_Spring_Middle	4500
 #define Chassic_Spring_Fast		8000
 
