@@ -28,6 +28,6 @@ void Avoid_Wall(void);
 
 void Gimbal_Automatic_target(float _pitch,float _yaw);
 void Gimbal_Automatic_target_lost(void);
-
+bool Yaw_At_Border(void);
 
 #endif

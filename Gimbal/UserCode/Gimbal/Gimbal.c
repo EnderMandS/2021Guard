@@ -377,3 +377,12 @@ void Avoid_Wall(void)
 		}
 	}
 }
+
+#define Yaw_Dead_Zone 1.f
+bool Yaw_At_Border(void)
+{
+	if( (yaw_nowangle>Yaw_Limit_Min-Yaw_Dead_Zone && yaw_nowangle<Yaw_Limit_Min+Yaw_Dead_Zone) || 
+			(yaw_nowangle>Yaw_Limit_Max-Yaw_Dead_Zone && yaw_nowangle<Yaw_Limit_Max+Yaw_Dead_Zone) )
+		return true;
+	return false;
+}	

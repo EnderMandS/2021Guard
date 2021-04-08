@@ -332,6 +332,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						Shoot_Ctrl=0;
 						break;
 				}
+				if( Yaw_At_Border()==true )
+					Shoot_Ctrl=0;
 				switch(remote_control.switch_left)
 				{
 					case 1:	//底盘+摩擦轮
@@ -389,6 +391,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						}
 						break;
 					}
+					if( Yaw_At_Border()==true )
+						Shoot_Ctrl=0;
 				}
 			}
 			break;
