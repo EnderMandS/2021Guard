@@ -13,17 +13,17 @@
 #include <math.h>
 #include "usartinfo.h"
 
-#define Inspect_Empty				1
-#define Pitch_Inspect_Speed	0.08f
-#define Yaw_Inspect_Speed		0.15f
-#define Yaw_Inspect_Speed_Offset	0.05f
+#define Inspect_Empty 1
+float Pitch_Inspect_Speed = 0.08f;
+float Yaw_Inspect_Speed = 0.15f;
+#define Yaw_Inspect_Speed_Offset 0.025f
 
 #define Limit_Yaw
 
 #define Yaw_Limit_Min 257.6f
 #define Yaw_Limit_Max	359.f
 
-float Pitch_Limit_Top = 121.52448f; //2788	121.52448f
+	float Pitch_Limit_Top = 121.52448f; //2788	121.52448f
 float Pitch_Limit_Bottom = 75.85f;	//61.53f	75.85f
 
 int32_t pitch, yaw;
@@ -210,8 +210,6 @@ void Gimbal_Automatic_control(void)
 	}
 }
 
-float aaaa;
-
 /**
  * @brief: 更改自瞄目标，当串口接收到新目标时运行这个函数
  * @param {*}
@@ -220,7 +218,6 @@ float aaaa;
  */
 void Gimbal_Automatic_target(float _pitch, float _yaw)
 {
-	aaaa = _yaw;
 	float det_yaw = _yaw - last_time_target_yaw;
 
 	if (det_yaw > 180.0f)
@@ -270,6 +267,28 @@ void Gimbal_Automatic_target_lost()
 	vision_target_yaw = yaw_angle;
 	vision_target_pitch = pitch_angle;
 	yaw_det_average = 0.0;
+}
+
+/**
+ * @brief: 巡检速度设置
+ * @param {*}
+ * @retval: 
+ * @attention: 
+ */
+void Gimbal_Inspect_setSpeed(int speed)
+{
+    switch (speed)
+    {
+    case Gimbal_Inspect_SPEED_SLOW:
+        Yaw_Inspect_Speed = 0.05f;
+        Pitch_Inspect_Speed = 0.05f;
+        break;
+    case Gimbal_Inspect_SPEED_FAST:
+    default:
+		Yaw_Inspect_Speed = 0.15f;
+        Pitch_Inspect_Speed = 0.08f;
+        break;
+    }
 }
 
 void Gimbal_Inspect(void) //巡检
