@@ -17,6 +17,7 @@ uint8_t Wait_For_Motor_Cnt[12]={0};
 uint8_t Wait_For_Motor_State=1;
 int Chassic_Dir=0;
 int Chassic_Last_Dir=0;
+uint8_t Game_State=0;
 extern int Firc_Speed;
 extern uint8_t color;
 
@@ -118,6 +119,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 					color=rx_data[0];
 					Chassic_Dir=rx_data[1];
 					Chassic_Last_Dir=rx_data[2];
+					Game_State=rx_data[3];
 				break;
 		default:
 				break;

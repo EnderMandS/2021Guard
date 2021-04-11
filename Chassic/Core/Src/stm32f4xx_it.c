@@ -409,6 +409,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		Data[0]=is_red_or_blue();
 		Data[1]=direction;
 		Data[2]=Last_Dir;
+		Data[3]=GameState.game_progress;
 		CAN_Send_Gimbal(&hcan1,Data,sizeof(Data));
 	}
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */

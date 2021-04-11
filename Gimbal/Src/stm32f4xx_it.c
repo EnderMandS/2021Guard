@@ -334,6 +334,11 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				}
 				if( Yaw_At_Border()==true )
 					Shoot_Ctrl=0;
+				
+				if(Game_State==4 && remote_control.switch_left==2)
+				{
+					remote_control.switch_left=1;
+				}
 				switch(remote_control.switch_left)
 				{
 					case 1:	//底盘+摩擦轮

@@ -20,7 +20,7 @@ float Yaw_Inspect_Speed = 0.18f;	//0.15
 
 #define Limit_Yaw
 
-#define Yaw_Limit_Min 257.6f
+#define Yaw_Limit_Min 243.f	//257.6
 #define Yaw_Limit_Max	359.f
 
 	float Pitch_Limit_Top = 121.52448f; //2788	121.52448f
