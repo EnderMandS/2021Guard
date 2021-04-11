@@ -24,7 +24,7 @@ float Yaw_Inspect_Speed = 0.18f;	//0.15
 #define Yaw_Limit_Max	359.f
 
 	float Pitch_Limit_Top = 121.52448f; //2788	121.52448f
-float Pitch_Limit_Bottom = 75.85f;	//61.53f	75.85f
+float Pitch_Limit_Bottom = 75.f;	//61.53f	75.85f
 
 int32_t pitch, yaw;
 float yaw_angle;
@@ -281,12 +281,12 @@ void Gimbal_Inspect_setSpeed(int speed)
     {
     case Gimbal_Inspect_SPEED_SLOW:
         Yaw_Inspect_Speed = 0.05f;
-        Pitch_Inspect_Speed = 0.05f;
+        Pitch_Inspect_Speed = 0.075f;		//0.05
         break;
     case Gimbal_Inspect_SPEED_FAST:
     default:
 		Yaw_Inspect_Speed = 0.15f;
-        Pitch_Inspect_Speed = 0.08f;
+        Pitch_Inspect_Speed = 0.2f;		//0.08
         break;
     }
 }
@@ -294,10 +294,10 @@ void Gimbal_Inspect_setSpeed(int speed)
 void Gimbal_Inspect(void) //巡检
 {
 	if(Pitch_dir==1)
-		if(pitch_angle>=Pitch_Limit_Top-Inspect_Empty)
+		if(pitch_angle>=Pitch_Limit_Top-16.f-Inspect_Empty)
 			Pitch_dir=-1;
 	if(Pitch_dir==-1)
-		if(pitch_angle<=Pitch_Limit_Bottom+Inspect_Empty)
+		if(pitch_angle<=Pitch_Limit_Bottom+12.5f+Inspect_Empty)	//bottom 75
 			Pitch_dir=1;
 	pitch_angle += Pitch_dir*Pitch_Inspect_Speed;
 		

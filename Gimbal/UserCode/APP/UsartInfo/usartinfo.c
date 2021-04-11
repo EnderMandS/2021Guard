@@ -30,6 +30,7 @@ float2uchar send_yaw;
 frame_judge save_frame_id_message[10] = {0};
 uint8_t extern_view_send_state = 0;
 uint8_t Aimming=0;		//判断自瞄或巡检
+uint16_t Slow_Inspect_Speed=25;
 
 /**
   * @brief  串口空闲中断DMA接收回调函数
@@ -53,11 +54,18 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 			case 0xAA:
 				view_send_state = 1;
 				Aimming = 0;
-				Gimbal_Inspect_setSpeed(Gimbal_Inspect_SPEED_FAST);
+				
+				if(Slow_Inspect_Speed==0)
+				{
+					Gimbal_Inspect_setSpeed(Gimbal_Inspect_SPEED_FAST);
+				}
+				else
+					--Slow_Inspect_Speed;
 				break;
 			case 0xDD:
 				view_send_state = 1;
 				Aimming = 0;
+				Slow_Inspect_Speed=25;
 				Gimbal_Inspect_setSpeed(Gimbal_Inspect_SPEED_SLOW);
 				break;
 			case 0xBB:
@@ -67,6 +75,7 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 			case 0xCC:
 				view_send_state = 3;
 				Aimming = 1;
+				Slow_Inspect_Speed=25;
 				view_shoot_mode = rx_view_buf[2]; //射击指令
 				break;
 			default:
