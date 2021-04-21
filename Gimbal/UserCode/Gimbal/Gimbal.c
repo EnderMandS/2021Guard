@@ -1,10 +1,3 @@
-/*
- * @Descripttion: 包含云台的各种模式
- * @version: V1.0
- * @Author: Xpj
- * @LastEditors: Xpj
- * @Date: 2020-10-26 20:36:48
- */
 #include "Gimbal.h"
 #include "caninfo.h"
 #include "Remote_control.h"
@@ -20,10 +13,11 @@ float Yaw_Inspect_Speed = 0.18f;	//0.15
 
 #define Limit_Yaw
 
-#define Yaw_Limit_Min 243.f	//257.6
-#define Yaw_Limit_Max	359.f
+//231 <--> 18.6
+#define Yaw_Limit_Min 231.f	//257.6		231
+#define Yaw_Limit_Max	18.6f	//				18.6
 
-	float Pitch_Limit_Top = 121.52448f; //2788	121.52448f
+float Pitch_Limit_Top = 121.52448f; //2788	121.52448f
 float Pitch_Limit_Bottom = 75.f;	//61.53f	75.85f
 
 int32_t pitch, yaw;
@@ -78,12 +72,6 @@ float loop_fp32_constrain(float Input, float minValue, float maxValue)
 	return Input;
 }
 
-/**
- * @brief: 云台缓启动
- * @param {*}
- * @retval: 
- * @attention: 
- */
 void Gimbal_Sotf_Start(void)
 {
 	if (sotf_start == 1)
@@ -144,12 +132,6 @@ void Gimbal_Sotf_Start(void)
 	}
 }
 
-/**
- * @brief: 云台PID控制
- * @param {*}
- * @retval: 
- * @attention: 
- */
 void Gimbal_Remote_Control(void)
 {
 	if (control_allow == 1)
@@ -159,7 +141,19 @@ void Gimbal_Remote_Control(void)
 	}
 	yaw_angle = loop_fp32_constrain(yaw_angle, 0, 360);
 	#ifdef Limit_Yaw
-		Limit(yaw_angle, Yaw_Limit_Min, Yaw_Limit_Max);
+		float Dead_Zone_Middle=(Yaw_Limit_Min+Yaw_Limit_Max)/2.f;
+		if( yaw_angle>Yaw_Limit_Max && yaw_angle<=Dead_Zone_Middle )
+			yaw_angle=Yaw_Limit_Max;
+		else if( yaw_angle<Yaw_Limit_Min && yaw_angle>Dead_Zone_Middle )
+			yaw_angle=Yaw_Limit_Min;
+	#else
+		if( (Chassic_Last_Dir==-1 || Chassic_Dir==-1) && yaw_angle>195.f && yaw_angle<Yaw_Limit_Min )
+		{
+			if( yaw_angle<(195.f+Yaw_Limit_Min)/2.f )
+				yaw_angle=195.f;
+			else
+				yaw_angle=Yaw_Limit_Min;
+		}
 	#endif
 	yaw = Control_YawPID(yaw_angle);
 	Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
@@ -186,7 +180,19 @@ void Gimbal_Automatic_control(void)
 			}
 			yaw_angle = loop_fp32_constrain(pre_yaw, 0, 360);
 			#ifdef Limit_Yaw
-				Limit(yaw_angle, Yaw_Limit_Min, Yaw_Limit_Max);
+				float Dead_Zone_Middle=(Yaw_Limit_Min+Yaw_Limit_Max)/2.f;
+				if( yaw_angle>Yaw_Limit_Max && yaw_angle<=Dead_Zone_Middle )
+					yaw_angle=Yaw_Limit_Max;
+				else if( yaw_angle<Yaw_Limit_Min && yaw_angle>Dead_Zone_Middle )
+					yaw_angle=Yaw_Limit_Min;
+			#else
+				if( (Chassic_Last_Dir==-1 || Chassic_Dir==-1) && yaw_angle>195.f && yaw_angle<Yaw_Limit_Min )
+				{
+					if( yaw_angle<(195.f+Yaw_Limit_Min)/2.f )
+						yaw_angle=195.f;
+					else
+						yaw_angle=Yaw_Limit_Min;
+				}
 			#endif
 			yaw = Control_YawPID(yaw_angle);
 
@@ -277,18 +283,18 @@ void Gimbal_Automatic_target_lost()
  */
 void Gimbal_Inspect_setSpeed(int speed)
 {
-    switch (speed)
-    {
-    case Gimbal_Inspect_SPEED_SLOW:
-        Yaw_Inspect_Speed = 0.05f;
-        Pitch_Inspect_Speed = 0.075f;		//0.05
-        break;
-    case Gimbal_Inspect_SPEED_FAST:
-    default:
-		Yaw_Inspect_Speed = 0.15f;
-        Pitch_Inspect_Speed = 0.2f;		//0.08
-        break;
-    }
+	switch (speed)
+	{
+	case Gimbal_Inspect_SPEED_SLOW:
+			Yaw_Inspect_Speed = 0.05f;
+			Pitch_Inspect_Speed = 0.075f;		//0.05
+			break;
+	case Gimbal_Inspect_SPEED_FAST:
+	default:
+	Yaw_Inspect_Speed = 0.15f;
+			Pitch_Inspect_Speed = 0.2f;		//0.08
+			break;
+	}
 }
 
 void Gimbal_Inspect(void) //巡检
@@ -302,10 +308,15 @@ void Gimbal_Inspect(void) //巡检
 	pitch_angle += Pitch_dir*Pitch_Inspect_Speed;
 		
 	#ifndef Limit_Yaw
-		yaw_angle += Yaw_Inspect_Speed;
+		yaw_angle += Yaw_Inspect_Speed*Yaw_dir;
 		yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
-		if( (yaw_angle>Yaw_Limit_Min && yaw_angle<Yaw_Limit_Max) || (0) )
-				yaw_angle-=Yaw_Inspect_Speed_Offset;
+		if( Chassic_Last_Dir==-1 || Chassic_Dir==-1 )
+		{
+			if( Yaw_dir==1 && yaw_angle>195.f && yaw_angle<yaw_angle<(195.f+Yaw_Limit_Min)/2.f )
+				Yaw_dir=-1;
+			else if( Yaw_dir==-1 && yaw_angle>=(195.f+Yaw_Limit_Min)/2.f && yaw_angle<Yaw_Limit_Min )
+				Yaw_dir=1;
+		}
 	#else
 		if(Yaw_dir==1)
 			if(yaw_angle>=Yaw_Limit_Max-Inspect_Empty)
@@ -397,11 +408,11 @@ void Avoid_Wall(void)
 	}
 }
 
-#define Yaw_Dead_Zone 1.f
+#define Yaw_Dead_Zone 0.25f
 bool Yaw_At_Border(void)
 {
 	if( (yaw_nowangle>Yaw_Limit_Min-Yaw_Dead_Zone && yaw_nowangle<Yaw_Limit_Min+Yaw_Dead_Zone) || 
 			(yaw_nowangle>Yaw_Limit_Max-Yaw_Dead_Zone && yaw_nowangle<Yaw_Limit_Max+Yaw_Dead_Zone) )
 		return true;
 	return false;
-}	
+}

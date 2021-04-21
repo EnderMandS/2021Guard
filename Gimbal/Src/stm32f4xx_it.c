@@ -332,8 +332,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						Shoot_Ctrl=0;
 						break;
 				}
-				if( Yaw_At_Border()==true )
-					Shoot_Ctrl=0;
+				if( Yaw_At_Border()==true && view_shoot_mode==0xEE )
+					Shoot_Ctrl=3;
 				
 				if(Game_State==4 && remote_control.switch_left==2)
 				{
@@ -396,8 +396,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						}
 						break;
 					}
-					if( Yaw_At_Border()==true )
-						Shoot_Ctrl=0;
+					if( Yaw_At_Border()==true && view_shoot_mode==0xEE )
+						Shoot_Ctrl=3;
 				}
 			}
 			break;
