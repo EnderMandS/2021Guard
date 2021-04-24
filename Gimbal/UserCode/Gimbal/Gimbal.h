@@ -5,7 +5,7 @@
 #include "stdbool.h"
 
 #define Motor_Ecd_to_Ang 0.0439506775729459f // 360度/8191
-#define yaw_center 301.5f
+
 #define pitch_center ((Pitch_Limit_Top+Pitch_Limit_Bottom)/2.f)
 
 enum Gimbal_Inspect_SPEED

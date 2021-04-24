@@ -18,6 +18,9 @@ bool Pitch_USE_Gyro=false;
 #define Yaw_Limit_Min 240.f	//257.6		231
 #define Yaw_Limit_Max	10.f	//				18.6
 
+float yaw_center=301.5f;
+float Yaw_Soft_Start_Speed_Ratio=1.f;
+
 #define Pitch_Gyro_Top 0.f
 #define Pitch_Gyro_Bottom (-46.52f)
 
@@ -32,8 +35,12 @@ int control_allow = 0;
 int read_allow = 0;
 int Pitch_dir=1;
 int Yaw_dir=1;
-uint8_t Set_Zero=0;
+
+float Zero_Offset[2]={0};
+uint32_t Set_Zero=0;
 bool Set_Zero_Complete=false;
+float Yaw_Zero_Set_At=0;
+int Set_State=0;	//校零阶段标志位
 
 // 自瞄时实际执行的pitch、yaw，云台坐标系
 float vision_target_pitch, vision_target_yaw;
@@ -120,11 +127,11 @@ void Gimbal_Sotf_Start(void)
 			
 			if (yaw_angle < yaw_center)
 			{
-				yaw_angle += 0.05f;
+				yaw_angle += 0.05f*Yaw_Soft_Start_Speed_Ratio;
 			}
 			else if (yaw_angle > yaw_center)
 			{
-				yaw_angle -= 0.05f;
+				yaw_angle -= 0.05f*Yaw_Soft_Start_Speed_Ratio;
 			}
 		}
 		if(Pitch_USE_Gyro==true)
@@ -142,14 +149,32 @@ void Gimbal_Sotf_Start(void)
 				if (Set_Zero_Complete == false)
 				{
 					++Set_Zero;
-					if (Set_Zero > 200)
+					if (Set_Zero > 500)
 					{
 						if (Set_Pitch_Zero_Point() == true)
 						{
-							Set_Zero_Complete = true;
-							Set_Zero = 0;
-							control_allow = 1;
-							sotf_start = 0;
+							#ifdef Limit_Yaw
+								Set_Zero_Complete = true;
+								Set_Zero = 0;
+								control_allow = 1;
+								sotf_start = 0;
+							#else
+								++Set_State;
+								if(Set_State==1)
+								{
+									Set_Zero=0;
+									yaw_center-=180;
+									Yaw_Soft_Start_Speed_Ratio=3.f;
+								}
+								else if(Set_State==2)
+								{
+									yaw_center+=180;
+									Set_Zero = 0;
+									Set_Zero_Complete = true;
+									control_allow = 1;
+									sotf_start = 0;
+								}
+							#endif
 						}
 					}
 				}
@@ -428,8 +453,6 @@ float Pitch_Gyro_Buf[Sampling_Times] = {0};
 float Pitch_Motor_Buf[Sampling_Times] = {0};
 float Pitch_Gyro_Max = -1;
 float Pitch_Gyro_Min = 361;
-float Zero_Offset=0;
-float Yaw_Zero_Set_At=0;
 bool Set_Pitch_Zero_Point(void) //采样取平均确定Pitch零点
 {
 	if (Hi229_Update == 1)
@@ -445,27 +468,34 @@ bool Set_Pitch_Zero_Point(void) //采样取平均确定Pitch零点
 			Pitch_Gyro_Min = Pitch_Gyro_Buf[cnt];
 
 		--cnt;
-		if (cnt < 0)
+		if(cnt<0)
 		{
-			if (Pitch_Gyro_Max - Pitch_Gyro_Min > Max_Error) //超过最大允许误差
+			if(Pitch_Gyro_Max-Pitch_Gyro_Min > Max_Error) //超过最大允许误差
 			{
 				Pitch_Gyro_Max = -1;
 				Pitch_Gyro_Min = 361;
-				for (; cnt < Sampling_Times; ++cnt)
-					Pitch_Gyro_Buf[cnt] = Pitch_Motor_Buf[cnt] = 0;
+				for (; cnt<Sampling_Times; ++cnt)
+					Pitch_Gyro_Buf[cnt]=Pitch_Motor_Buf[cnt]=0;
 				return false;
 			}
 
-			for (cnt = 0; cnt < Sampling_Times; ++cnt)
+			for(cnt=0; cnt<Sampling_Times; ++cnt)
 			{
 				Gyro_Average += Pitch_Gyro_Buf[cnt];
 				Motor_Average += Pitch_Motor_Buf[cnt];
 			}
 			Gyro_Average/=(Sampling_Times*1.f);
 			Motor_Average/=(Sampling_Times*1.f);
-			Zero_Offset=-(Gyro_Average+Motor_Average*Motor_Ecd_to_Ang-Pitch_Limit_Top);
-//			Zero_Offset=-Gyro_Average;
-			Yaw_Zero_Set_At=yaw_nowangle;
+			Zero_Offset[Set_State]=-(Gyro_Average+Motor_Average*Motor_Ecd_to_Ang-Pitch_Limit_Top);
+			
+			#ifndef Limit_Yaw
+				Pitch_Gyro_Max = -1;
+				Pitch_Gyro_Min = 361;
+				Gyro_Average=Motor_Average=0;
+				for(cnt=0; cnt<Sampling_Times; ++cnt)
+					Pitch_Gyro_Buf[cnt]=Pitch_Motor_Buf[cnt]=0;
+			#endif
+			
 			return true;
 		}
 	}
@@ -476,16 +506,27 @@ float Zero_Offset_Cal(void)
 {
 	if(Set_Zero_Complete==true)
 	{
-		float dif=Yaw_Zero_Set_At-yaw_nowangle;
+		float dif=yaw_center-yaw_nowangle;
 		if(dif>180)
 			dif=360-dif;
 		else if(dif<0)
 			dif=-dif;
 		
-		if(dif!=0)
-			return Zero_Offset-(dif/180.f)*Zero_Offset*2.f;
-		return Zero_Offset;
-		
+		#ifdef Limit_Yaw
+			if(dif==0 || dif==90)
+				return 0;
+			else if(dif<90)
+				return Zero_Offset[0]-(dif/90.f)*Zero_Offset[0];
+			else if(dif<=180)
+				return -((dif-90.f)/90.f)*Zero_Offset[0];
+		#else
+			if(dif>0 && dif<180)
+				return Zero_Offset[0]+(dif/180.f)*(Zero_Offset[1]-Zero_Offset[0]);
+			else if(dif==0)
+				return Zero_Offset[0];
+			else
+				return Zero_Offset[1]; 
+		#endif
 	}
 	return 0;
 }
