@@ -56,6 +56,7 @@ extern uint8_t Motor_Output_State[12];
 extern int Chassic_Dir;
 extern int Chassic_Last_Dir;
 extern uint8_t Game_State;
+extern uint32_t Can_Error;
 
 void get_gear_motor_measure(gear_moto_measure_t *ptr, uint8_t rxd[]);
 void get_motor_measure(gear_moto_measure_t *ptr, uint8_t rxd[]);

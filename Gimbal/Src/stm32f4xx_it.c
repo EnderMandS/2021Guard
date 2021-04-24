@@ -55,6 +55,8 @@ int eliminate_dithering_right = 0;
 
 uint16_t Change_Dir_Cnt=0;
 
+uint8_t TIM1_Div=0;
+
 /*
 0x200	1,2,3,4
 0x1FF	5,6,7,8		1,2,3,4
@@ -286,18 +288,27 @@ void CAN1_RX0_IRQHandler(void)
 
   /* USER CODE END CAN1_RX0_IRQn 1 */
 }
-
 /**
   * @brief This function handles TIM1 update interrupt and TIM10 global interrupt.
   */
 void TIM1_UP_TIM10_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
+	
+	// 400Hz
 
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
-	if(Motor_Power_Up==0)	//Wait for motor power up
+	
+	//陀螺仪持续在线判断，串口接收中断中清零
+	++Gryo_Update_cnt;
+	if(Gryo_Update_cnt>=400*3)	//3s无陀螺仪数据更新改为电机控制
+	{
+		Pitch_USE_Gyro=false;
+	}
+	
+	if(Motor_Power_Up==0)	//Wait for motor & gryo power up
 	{
 		if(	gear_motor_data[Gimbal_Y].real_current!=0 &&
 				gear_motor_data[Gimbal_P].real_current!=0 &&
@@ -309,7 +320,14 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	else	//working
 	{
 		yaw_nowangle = Yaw_Motor_Angle_Change();
-		pit_nowangle = gear_motor_data[Gimbal_P].angle * Motor_Ecd_to_Ang;
+		if(Pitch_USE_Gyro==true)
+		{
+			pit_nowangle = eular[0];
+		}
+		else
+		{
+			pit_nowangle = gear_motor_data[Gimbal_P].angle*Motor_Ecd_to_Ang - Zero_Offset_Cal();	//电机读回角度-零点偏置
+		}
 		
 		switch(remote_control.switch_right)	//右拨杆
 		{
@@ -444,12 +462,17 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		else
 			Switch_State=1;
 		
-		uint8_t Chassic_Data[4]={Chassic_State,Shoot_Ctrl,Switch_State,Aimming};
-		Chassic_Ctrl(Chassic_Data,4);
-		CAN_Motor_Ctrl(&hcan1,Motor_Output);
-		for(uint8_t i=0; i<12; ++i)
-			Motor_Output_State[i]=0;
-		Chassic_State=Shoot_Ctrl=0;
+		++TIM1_Div;
+		if(TIM1_Div==2)
+		{
+			TIM1_Div=0;
+			uint8_t Chassic_Data[4]={Chassic_State,Shoot_Ctrl,Switch_State,Aimming};
+			Chassic_Ctrl(Chassic_Data,4);
+			CAN_Motor_Ctrl(&hcan1,Motor_Output);
+			for(uint8_t i=0; i<12; ++i)
+				Motor_Output_State[i]=0;
+			Chassic_State=Shoot_Ctrl=0;
+		}
 	}
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
 }

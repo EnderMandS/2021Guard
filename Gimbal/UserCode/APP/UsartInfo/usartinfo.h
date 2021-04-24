@@ -22,6 +22,7 @@ extern uint8_t UART_Buffer[36];
 extern uint8_t view_shoot_mode ;
 extern uint8_t view_send_state;
 extern uint8_t Hi229_Update;
+extern uint32_t Gryo_Update_cnt;
 
 typedef struct
 {

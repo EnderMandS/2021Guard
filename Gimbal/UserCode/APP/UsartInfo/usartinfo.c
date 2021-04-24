@@ -31,6 +31,7 @@ frame_judge save_frame_id_message[10] = {0};
 uint8_t extern_view_send_state = 0;
 uint8_t Aimming=0;		//判断自瞄或巡检
 uint16_t Slow_Inspect_Speed=25;
+uint32_t Gryo_Update_cnt=0;
 
 /**
   * @brief  串口空闲中断DMA接收回调函数
@@ -96,8 +97,9 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 		if(rxbuf[0]==0x5A&&rxbuf[1]==0xA5&&rxbuf[6]==0xB0&&rxbuf[13]==0xD0)
 		{
 			Hi229_Update=1;
-			eular[0] = ((float)(int16_t)(rxbuf[14] + (rxbuf[15]<<8)))/100;	//pitch
-			eular[1] = ((float)(int16_t)(rxbuf[16] + (rxbuf[17]<<8)))/100;
+			Gryo_Update_cnt=0;
+			eular[0] = -((float)(int16_t)(rxbuf[14] + (rxbuf[15]<<8)))/100;	//pitch
+			eular[1] = ((float)(int16_t)(rxbuf[16] + (rxbuf[17]<<8)))/100;	//roll
 			eular[2] = (((float)(int16_t)(rxbuf[18] + (rxbuf[19]<<8)))/10);	//Yaw轴
 			gyo[0] =  (int16_t)(rxbuf[7] + (rxbuf[8]<<8));
 			gyo[1] =  (int16_t)(rxbuf[9] + (rxbuf[10]<<8));
@@ -107,7 +109,7 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 }
 
 /**
- * @brief: 串口7发送函数
+ * @brief: 串口1发送函数
  * @param {*}
  * @retval: 
  * @attention: 由于HAL库的接收中断会锁住串口，不使用HAL串口发送，本函数是直接访问寄存器
@@ -127,7 +129,7 @@ void Uart1_TransmissionT_Data(uint8_t *p_data, uint32_t size)
 	}
 }
 /**
- * @brief: 串口8发送函数
+ * @brief: 串口6发送函数
  * @param {*}
  * @retval: 
  * @attention: 

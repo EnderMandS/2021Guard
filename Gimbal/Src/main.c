@@ -123,13 +123,17 @@ int main(void)
     /* USER CODE BEGIN 3 */
 		if(extern_view_send_state == 1)
 		{
-			send_pitch.f = pit_nowangle-Pitch_Limit_Top;
-//			send_pitch.f=eular[0];
+			if(Pitch_USE_Gyro==true)
+				send_pitch.f = eular[0];
+			else
+				send_pitch.f = pit_nowangle;
+			
 			if (yaw_nowangle > 180) {
 				send_yaw.f = -(360 - yaw_nowangle);
 			} else {
 				send_yaw.f = yaw_nowangle;
 			}
+			
 			Send_Position_Buf[0] = 0x5A;
 			memcpy(Send_Position_Buf+1,send_pitch.c,4);
 			memcpy(Send_Position_Buf+5,send_yaw.c,4);

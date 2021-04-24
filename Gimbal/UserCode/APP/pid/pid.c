@@ -121,44 +121,58 @@ void pid_init(PID_TypeDef *pid)
 
 //imu.wz是Yaw的速度，imu.wx是Pitch的速度，imu.wy是rol的速度
 
-//#define Pitch_PID1
+//#define USE_Gryo_PID
+#ifdef USE_Gryo_PID
+	float PitchOPIDP = 2.5;
+	float PitchOPIDI = 0.03;
+	float PitchOPIDD = 5;
 
-#ifdef Pitch_PID1
-float PitchOPIDP = 5;
-float PitchOPIDI = 0.07;
-float PitchOPIDD = 10;
+	float PitchOPIDCurrentError = 0;
+	float PitchOPIDLastError = 0;
+	float PitchOPIDIMax = 30;
+	float PitchOPIDPIDMax = 30000;
+	float PitchOPIDPout;
+	float PitchOPIDIout;
+	float PitchOPIDDout;
+	float PitchOPIDPIDout;
+
+	float PitchIPIDP = 250;
+	float PitchIPIDI = 0;
+	float PitchIPIDD = 10;
+
+	float PitchIPIDCurrentError = 0;
+	float PitchIPIDLastError = 0;
+	float PitchIPIDIMax = 0;
+	float PitchIPIDPIDMax = 30000;
+	float PitchIPIDPout, PitchIPIDIout, PitchIPIDDout;
+	float PitchIPIDPIDout;
+	float PitchCurrentTick, PitchLastTick;
 #else
-float PitchOPIDP = 5;
-float PitchOPIDI = 0.03;
-float PitchOPIDD = 10;
+	float PitchOPIDP = 5;
+	float PitchOPIDI = 0.03;
+	float PitchOPIDD = 10;
+
+	float PitchOPIDCurrentError = 0;
+	float PitchOPIDLastError = 0;
+	float PitchOPIDIMax = 30;
+	float PitchOPIDPIDMax = 30000;
+	float PitchOPIDPout;
+	float PitchOPIDIout;
+	float PitchOPIDDout;
+	float PitchOPIDPIDout;
+
+	float PitchIPIDP = 350;
+	float PitchIPIDI = 0;
+	float PitchIPIDD = 10;
+
+	float PitchIPIDCurrentError = 0;
+	float PitchIPIDLastError = 0;
+	float PitchIPIDIMax = 0;
+	float PitchIPIDPIDMax = 30000;
+	float PitchIPIDPout, PitchIPIDIout, PitchIPIDDout;
+	float PitchIPIDPIDout;
+	float PitchCurrentTick, PitchLastTick;
 #endif
-
-float PitchOPIDCurrentError = 0;
-float PitchOPIDLastError = 0;
-float PitchOPIDIMax = 30;
-float PitchOPIDPIDMax = 30000;
-float PitchOPIDPout;
-float PitchOPIDIout;
-float PitchOPIDDout;
-float PitchOPIDPIDout;
-
-#ifdef Pitch_PID1
-float PitchIPIDP = 150;
-float PitchIPIDI = 0;
-float PitchIPIDD = 10;
-#else
-float PitchIPIDP = 350;
-float PitchIPIDI = 0;
-float PitchIPIDD = 10;
-#endif
-
-float PitchIPIDCurrentError = 0;
-float PitchIPIDLastError = 0;
-float PitchIPIDIMax = 0;
-float PitchIPIDPIDMax = 30000;
-float PitchIPIDPout, PitchIPIDIout, PitchIPIDDout;
-float PitchIPIDPIDout;
-float PitchCurrentTick, PitchLastTick;
 
 float YawOPIDP = 200;
 float YawOPIDI = 0;
@@ -222,7 +236,14 @@ float Control_YawPID(float Target)
 float Control_PitchPID(float Target)
 {
 	/***************************************	外环角度环	******************************************/
-	PitchOPIDCurrentError = Target - gear_motor_data[Gimbal_P].angle * Motor_Ecd_to_Ang;
+	if(Pitch_USE_Gyro==true)
+	{
+		PitchOPIDCurrentError = Target - eular[0];
+	}
+	else
+	{
+		PitchOPIDCurrentError = Target - pit_nowangle;
+	}
 	if(fabs(PitchOPIDCurrentError)>180)
 	{
 		if(PitchOPIDCurrentError>0)

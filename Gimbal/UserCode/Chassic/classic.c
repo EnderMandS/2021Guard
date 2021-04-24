@@ -5,6 +5,7 @@
 #include <string.h>
 #include <math.h>
 #include "can.h"
+#include "caninfo.h"
 
 uint8_t Chassic_State=0;
 uint8_t Classic_Ctrl[8]={0};
@@ -38,5 +39,6 @@ void Chassic_Ctrl(uint8_t *Data, uint8_t Len)
 	uint32_t send_mail_box;
 	can_tx_message.StdId=0x101;
 	memcpy(can_send_data,Data,Len);
-	HAL_CAN_AddTxMessage(&hcan1, &can_tx_message, can_send_data, &send_mail_box);
+	if(HAL_CAN_AddTxMessage(&hcan1, &can_tx_message, can_send_data, &send_mail_box)==HAL_ERROR)
+		++Can_Error;
 }

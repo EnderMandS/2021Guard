@@ -20,6 +20,7 @@ int Chassic_Last_Dir=0;
 uint8_t Game_State=0;
 extern int Firc_Speed;
 extern uint8_t color;
+uint32_t Can_Error=0;
 
 /**
  * @brief: 数据处理,将接收到数据传入指针并解算
@@ -154,7 +155,8 @@ void CAN_Send_CMD(CAN_HandleTypeDef *hcan, int StdID, int16_t motor1, int16_t mo
 	can_send_data[5] = motor3;
 	can_send_data[6] = (motor4 >> 8);
 	can_send_data[7] = motor4;
-	HAL_CAN_AddTxMessage(hcan, &can_tx_message, can_send_data, &send_mail_box);
+	if(HAL_CAN_AddTxMessage(hcan, &can_tx_message, can_send_data, &send_mail_box)==HAL_ERROR)
+		++Can_Error;
 }
 void CAN_Motor_Ctrl(CAN_HandleTypeDef *hcan, int16_t Motor_Data[12])
 {
@@ -178,6 +180,7 @@ void CAN_Motor_Ctrl(CAN_HandleTypeDef *hcan, int16_t Motor_Data[12])
 		can_send_data[5] = Motor_Data[4*i+2];
 		can_send_data[6] = Motor_Data[4*i+3] >> 8;
 		can_send_data[7] = Motor_Data[4*i+3];
-		HAL_CAN_AddTxMessage(hcan, &can_tx_message, can_send_data, &send_mail_box);
+		if(HAL_CAN_AddTxMessage(hcan, &can_tx_message, can_send_data, &send_mail_box)==HAL_ERROR)
+			++Can_Error;
 	}
 }

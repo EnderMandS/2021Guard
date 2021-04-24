@@ -22,6 +22,7 @@ extern int read_allow;
 extern int32_t pitch ,yaw ;
 extern float yaw_nowangle;
 extern float pit_nowangle;
+extern bool Pitch_USE_Gyro;
 
 void Gimbal_Sotf_Start(void);
 void Gimbal_Remote_Control(void);
@@ -32,6 +33,8 @@ float Limit_Zero_To_360(float Input);
 bool Set_Pitch_Zero_Point(void);
 void Avoid_Wall(void);
 bool Yaw_At_Border(void);
+float loop_fp32_constrain(float Input, float minValue, float maxValue);
+float Zero_Offset_Cal(void);
 
 extern void Gimbal_Automatic_target(float _pitch,float _yaw);
 extern void Gimbal_Automatic_target_lost(void);
