@@ -13,6 +13,7 @@
 #include "string.h"
 #include "crc.h"
 #include "bsp_usart.h"
+#include "bsp_judge.h"
 
 uint8_t Judgement_Buf[JUDGEMENT_BUF_LEN];
 
@@ -125,6 +126,7 @@ bool Judge_Read_Data(uint8_t *ReadFromUsart)
 		
 					case ID_event_data:    				//0x0101//场地事件//与空中有关
 						memcpy(&EventData, (ReadFromUsart + DATA), LEN_event_data);
+						Event_Decode(EventData.event_type);
 					break;
 					
 					case ID_supply_projectile_action:   //0x0102 //场地补给站动作标识数据//字节偏移量为3的数据（大小一个字节）是补弹数量 50：50 颗子弹； 

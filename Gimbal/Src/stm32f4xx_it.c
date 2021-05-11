@@ -67,6 +67,9 @@ uint8_t TIM1_Div=0;
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define Auto_Ctrl
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -353,16 +356,27 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				if( Yaw_At_Border()==true && view_shoot_mode==0xEE )
 					Shoot_Ctrl=3;
 				
-				if(Game_State==4 && remote_control.switch_left==2)
-				{
-					remote_control.switch_left=1;
-				}
+				#ifdef Auto_Ctrl	//根据比赛状态开启不同功能、自动优先级大于手动
+					if(remote_control.switch_left==2 && Game_Start==true)	//比赛开始开摩擦轮
+						remote_control.switch_left=3;
+					if(remote_control.switch_left==3 && Outpost_Alive==false)	//前哨站阵亡开底盘
+						remote_control.switch_left=1;
+				#else		//比赛开始开摩擦轮、底盘		手动优先级大于自动
+					if(remote_control.switch_left==2 && Game_Start==true)
+						remote_control.switch_left=1;
+				#endif
+				
 				switch(remote_control.switch_left)
 				{
 					case 1:	//底盘+摩擦轮
 						Chassic_State=1;
-						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
-						Shoot_Speed_Pid_Calc(Firc_Speed);
+						if(Shootable==false)
+							Shoot_Speed_Pid_Calc(0);
+						else
+						{
+							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
+							Shoot_Speed_Pid_Calc(Firc_Speed);
+						}
 						break;
 					
 					case 3:	//摩擦轮
@@ -427,8 +441,21 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				sotf_start = 1;
 				Shoot_Speed_Pid_Calc(0);	//摩擦轮
 				Motor_Output[Fric_1]=Motor_Output[Fric_2]=0;
-				Shoot_Ctrl=0;
-				Chassic_State=0;
+				switch(remote_control.switch_left)
+				{
+					case 1:
+						Chassic_State=2;	//获取轨道长度
+					break;
+					
+					case 3:
+						Shoot_Ctrl=2;	//拨弹 高速
+					break;
+					
+					default:
+						Chassic_State=0;
+						Shoot_Ctrl=0;
+					break;
+				}
 			}
 			break;
 			
@@ -456,7 +483,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		else
 			Motor_Output[Fric_2]=0;
 		
-		uint8_t Switch_State=0;	//发送微动开关状态
+		uint8_t Switch_State=0;	//微动开关状态
 		if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9) == GPIO_PIN_RESET)
 			Switch_State=0;
 		else
@@ -466,6 +493,12 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		if(TIM1_Div==2)
 		{
 			TIM1_Div=0;
+			if(Shootable==false)	//裁判系统读回，不能继续发弹
+			{
+				Chassic_State=1;
+				Shoot_Ctrl=0;
+				Aimming=false;
+			}
 			uint8_t Chassic_Data[4]={Chassic_State,Shoot_Ctrl,Switch_State,Aimming};
 			Chassic_Ctrl(Chassic_Data,4);
 			CAN_Motor_Ctrl(&hcan1,Motor_Output);

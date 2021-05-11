@@ -1,8 +1,8 @@
 #include "classic.h"
 #include "pid.h"
-#include "math.h"
+#include <math.h>
+#include <stdlib.h>
 #include "bsp_can.h"
-#include <stdbool.h>
 
 int Buff_Time=200;
 
@@ -76,7 +76,7 @@ float Slow_Change_Speed(int dir, uint16_t Speed)
 	return dir*Speed;
 }
 
-#define Wait_Cnt 20		//检测到电机反转之后等待时间 实际时间=Wait_Cnt/200Hz
+#define Wait_Cnt 50		//检测到电机反转之后等待时间 实际时间=Wait_Cnt/400Hz
 bool Dir_Change_Wait=false;
 uint8_t Dir_Change_Wait_Cnt=0;
 void Spring(int dir,uint16_t Speed)
@@ -153,3 +153,45 @@ void Spring(int dir,uint16_t Speed)
 		}
 	}
 }
+
+
+#define Sample_Times 6
+
+uint8_t Measuer_State=Ready_Measure;
+uint32_t Rail_Len=0;
+uint32_t Rail_Len_Buff[Sample_Times]={0};
+uint16_t Rail_Len_Buff_cnt=0;
+void Measuer_Rail_Len(void)
+{
+	if(Measuer_State==End_Measure)
+		return;
+	if(direction!=Last_Dir)
+	{
+		if(Measuer_State==Measuring)
+		{
+			Rail_Len_Buff[Rail_Len_Buff_cnt]=abs(gear_motor_data[Moto_ID[0]].round_cnt);
+			++Rail_Len_Buff_cnt;
+			if(Rail_Len_Buff_cnt!=Sample_Times)
+			{
+				Measuer_State=Ready_Measure;
+			}
+			else
+			{
+				uint32_t sum=0;
+				for(uint8_t i=0; i<Sample_Times; ++i)
+					sum += Rail_Len_Buff[i];
+				Rail_Len = sum/Sample_Times;
+				Measuer_State=End_Measure;
+			}
+		}
+	}
+	else
+	{
+		if(Measuer_State==Ready_Measure)
+		{
+			gear_motor_data[Moto_ID[0]].round_cnt=0;
+			Measuer_State=Measuring;
+		}
+	}
+}
+

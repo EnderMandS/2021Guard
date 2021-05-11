@@ -2,6 +2,7 @@
 #define __BSP_CAN_H__
 
 #include "main.h"
+#include <stdbool.h>
 
 typedef struct
 {
@@ -17,6 +18,7 @@ typedef struct
 
 extern gear_moto_measure_t gear_motor_data[12];
 extern int16_t Motor_Output[12];
+extern bool Aim;
 
 void CAN_Filter_Init(void);
 void CAN_Motor_Ctrl(CAN_HandleTypeDef *hcan, int16_t Motor_Data[12]);

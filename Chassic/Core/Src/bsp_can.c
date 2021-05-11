@@ -12,6 +12,8 @@ gear_moto_measure_t gear_motor_data[12];
 int16_t Motor_Output[12]={0};
 extern uint32_t Time_Tick;
 
+bool Aim=false;
+
 void CAN_Filter_Init(void)
 {
   CAN_FilterTypeDef CAN_Filter_STM;
@@ -72,16 +74,8 @@ void get_gear_motor_measure(gear_moto_measure_t *ptr, uint8_t rxd[])
 void Gimbal_Receive(uint8_t Receive_Data[8])
 {
 	Time_Tick=0;
-	switch( Receive_Data[0] )	//Chassic control
-	{
-		case 0x01:	//Move
-			Move_Allow=1;
-			break;
-		
-		default:		//Stop
-			Move_Allow=0;
-			break;
-	}
+
+	Move_Allow=Receive_Data[0];
 	
 	switch( Receive_Data[1] )	//Shoot control
 	{
@@ -114,11 +108,13 @@ void Gimbal_Receive(uint8_t Receive_Data[8])
 				break;
 			#else		//µ¯»É
 				case 0:
+					Aim=false;
 					if(Classic_Move_Speed!=Chassic_Spring_Fast)
 						Classic_Move_Speed=Chassic_Spring_Middle;
 				break;
 					
 				case 1:
+					Aim=true;
 					Classic_Move_Speed=Chassic_Spring_Slow;
 				break;
 			#endif

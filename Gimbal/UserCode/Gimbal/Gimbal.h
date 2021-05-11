@@ -23,6 +23,7 @@ extern int32_t pitch ,yaw ;
 extern float yaw_nowangle;
 extern float pit_nowangle;
 extern bool Pitch_USE_Gyro;
+extern bool Limit_Yaw;
 
 void Gimbal_Sotf_Start(void);
 void Gimbal_Remote_Control(void);

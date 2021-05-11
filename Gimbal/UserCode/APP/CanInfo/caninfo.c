@@ -9,6 +9,7 @@
 #include "main.h"
 #include "can.h"
 #include <string.h>
+#include "Gimbal.h"
 
 gear_moto_measure_t gear_motor_data[12];
 int16_t Motor_Output[12]={0};
@@ -17,10 +18,13 @@ uint8_t Wait_For_Motor_Cnt[12]={0};
 uint8_t Wait_For_Motor_State=1;
 int Chassic_Dir=0;
 int Chassic_Last_Dir=0;
-uint8_t Game_State=0;
+bool Game_Start=false;
+bool Base_Shield=true;
+bool Outpost_Alive=true;
 extern int Firc_Speed;
 extern uint8_t color;
 uint32_t Can_Error=0;
+bool Shootable=true;
 
 /**
  * @brief: 数据处理,将接收到数据传入指针并解算
@@ -120,7 +124,12 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 					color=rx_data[0];
 					Chassic_Dir=rx_data[1];
 					Chassic_Last_Dir=rx_data[2];
-					Game_State=rx_data[3];
+					Game_Start=rx_data[3];
+					Outpost_Alive=rx_data[4];
+					Base_Shield=rx_data[5];
+					Shootable=rx_data[6];
+			
+					Limit_Yaw=Base_Shield;	//没有基地护盾不限制Yaw
 				break;
 		default:
 				break;

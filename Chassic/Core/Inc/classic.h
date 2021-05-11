@@ -3,8 +3,10 @@
 
 #include "main.h"
 #include "pid.h"
+#include <stdbool.h>
 
-#define USE_SPRING
+#define USE_SPRING		//非弹簧模式的功能已弃用，不能注释掉，留下只是为了保留代码
+#define RAND_DIR
 
 #define Classic_Slow		1500	//瞄准
 #define Classic_Middle	4500	//巡检
@@ -27,6 +29,12 @@ typedef enum
 	Chassic_R = Chassic_Right_3508_ID	-Motor_Base,
 	Cartridge = Cartridge_2006_ID			-Motor_Base,
 }Motor_Data_ID;
+enum
+{
+	Ready_Measure,
+	Measuring,
+	End_Measure
+};
 
 extern uint8_t Move_Allow;
 extern int direction;
@@ -39,9 +47,13 @@ extern uint8_t Aimming;
 extern uint8_t Changing_Speed_Flag;
 extern uint8_t Line;
 extern int Last_Dir;
+extern uint8_t Measuer_State;
+extern uint32_t Rail_Len;
 
 void Chassis_init(void);
 float Slow_Change_Speed(int dir, uint16_t Speed);
 void Spring(int dir,uint16_t Speed);
+void Rand_Speed_Up_Init(void);
+void Measuer_Rail_Len(void);
 
 #endif

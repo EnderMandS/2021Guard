@@ -31,6 +31,8 @@
 #include "bsp_usart.h"
 #include "bullet.h"
 #include "bsp_judge.h"
+#include <stdlib.h>
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,6 +58,7 @@ uint32_t Time_Tick=0;	//计时，一秒内没有收到云台数据停止动作
 uint8_t Motor_Power_Up=0;	//判断电机上电，1上电完成
 uint8_t Shoot_Ultra_Mode=0;	//剩余热量多，高射速消耗热量，1有效
 int Heat_Rest=0;
+float Rail_Position=0.f;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -272,8 +275,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			Switch_State[0]=Switch_State[1]=1;
 		}
 		
-//		Power_Heat_Cheak();	//功率&热量超出检测
-		
 		if(Changing_Speed_Flag==0)	//速度反向时不检测光电开关
 		{
 			if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_RESET)	//左边检测到墙壁，开始反转
@@ -319,26 +320,79 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		
 		Check_Being_Hit();	//被击打改变速度
 		
-		if(Move_Allow==1)
+		if(Measuer_State==End_Measure && Aim==false)	//知道轨道长度、没有瞄准到目标：随机变向
 		{
-			#ifndef USE_SPRING
-				motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed);
-				for (uint8_t i=0; i<2; i++)
-				{
-					motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm); //根据设定值进行PID计算。
-					Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
-				}
-			#else
-				Spring(direction,Classic_Move_Speed);
-			#endif
-		}
-		else
-		{
-			motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,0);
-			for(uint8_t i=0; i<2; ++i)
+			float range=0.025f;	//相对于变向点的变向范围
+			float point_1=0.33f;	//变向点1
+			float point_2=0.66f;	//变向点2
+			Rail_Position=(abs(gear_motor_data[Moto_ID[0]].round_cnt)*1.f)/(Rail_Len*1.f);	//轨道位置0-1
+			if(	(Rail_Position>point_1-range && Rail_Position<point_1+range)	||
+					(Rail_Position>point_2-range && Rail_Position<point_2+range)	)	//是否在变向点
 			{
-				motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
-				Motor_Output[ Moto_ID[i] ]=0;
+				if(Rand_Change_Flag==false)	//是否已执行变向函数
+				{
+					Rand_Change_Flag=true;
+					Rand_Dir_Change();
+				}
+			}
+			else
+				Rand_Change_Flag=false;
+		}
+		
+		switch (Move_Allow)
+		{
+			case 1:	//正常移动
+			{
+				#ifndef USE_SPRING
+					motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed);
+					for (uint8_t i=0; i<2; i++)
+					{
+						motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm); //根据设定值进行PID计算。
+						Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
+					}
+				#else
+					Spring(direction,Classic_Move_Speed);
+				#endif
+				break;
+			}
+			
+			case 2:	//获取轨道长度
+			{
+				if(Measuer_State!=End_Measure)
+				{
+					#ifndef USE_SPRING
+						motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed);
+						for (uint8_t i=0; i<2; i++)
+						{
+							motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm); //根据设定值进行PID计算。
+							Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
+						}
+					#else
+						Spring(direction,Classic_Move_Speed);
+					#endif
+					Measuer_Rail_Len();
+				}
+				else	//测量完之后停下
+				{
+					motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,0);
+					for(uint8_t i=0; i<2; ++i)
+					{
+						motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
+						Motor_Output[ Moto_ID[i] ]=0;
+					}
+				}
+				break;
+			}
+			
+			default:	//停止动作
+			{
+				motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,0);
+				for(uint8_t i=0; i<2; ++i)
+				{
+					motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
+					Motor_Output[ Moto_ID[i] ]=0;
+				}
+				break;
 			}
 		}
 		
@@ -406,11 +460,25 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		CAN_Motor_Ctrl(&hcan2,Motor_Output);
 		
 		uint8_t Data[8]={0};
-		Data[0]=is_red_or_blue();
-		Data[1]=direction;
-		Data[2]=Last_Dir;
-		Data[3]=GameState.game_progress;
-		CAN_Send_Gimbal(&hcan1,Data,sizeof(Data));
+		Data[0]=is_red_or_blue();		//红蓝方 视觉需求
+		Data[1]=direction;		//移动方向
+		Data[2]=Last_Dir;		//云台规避
+		
+		if(GameState.game_progress==4)	//比赛开始
+			Data[3]=true;
+		else
+			Data[3]=false;
+		
+		Data[4]=Field_Event_Data.Outpost_Alive;	//前哨站存活状态
+		
+		Data[5]=Field_Event_Data.Base_Shield_Existence;	//基地护盾
+		
+    if(BulletRemaining.bullet_remaining_num_17mm==0)	//500发
+      Data[6]=false;
+    else
+      Data[6]=true;
+		
+		CAN_Send_Gimbal(&hcan1,Data,7);
 	}
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
 }

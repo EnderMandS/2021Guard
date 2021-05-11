@@ -107,6 +107,7 @@ int main(void)
 	CAN_Filter_Init();
 	Chassis_init();
 	gear_moto_position_pid_init();
+  Rand_Speed_Up_Init();   //初始化随机加速时间
 	HAL_TIM_Base_Start_IT(&htim1);
 //	HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE END 2 */
