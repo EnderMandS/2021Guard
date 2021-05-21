@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc; ../Drivers/STM32F4xx_HAL_Driver/Inc; ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy; ../Drivers/CMSIS/Device/ST/STM32F4xx/Include; ../Drivers/CMSIS/Include; ..\UserCode\Bsp\bsp_can; ..\UserCode\APP\CanInfo; ..\UserCode\Bsp\Bsp_usart; ..\UserCode\APP\remote control; ..\UserCode\APP\UsartInfo; ..\UserCode\Judge; ..\UserCode\APP\pid; ..\UserCode\Gimbal; ..\UserCode\APP\Filter; ..\UserCode\Shoot; ..\UserCode\Chassic</IncludePath>
+              <IncludePath>../Inc;  ../Drivers/STM32F4xx_HAL_Driver/Inc;  ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;  ../Drivers/CMSIS/Device/ST/STM32F4xx/Include;  ../Drivers/CMSIS/Include;  ..\UserCode\Bsp\bsp_can;  ..\UserCode\APP\CanInfo;  ..\UserCode\Bsp\Bsp_usart;  ..\UserCode\APP\remote control;  ..\UserCode\APP\UsartInfo;  ..\UserCode\Judge;  ..\UserCode\APP\pid;  ..\UserCode\Gimbal;  ..\UserCode\APP\Filter;  ..\UserCode\Shoot;  ..\UserCode\Chassic;  ..\UserCode\Buzzer</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -626,6 +626,16 @@
               <FileName>shoot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\UserCode\Shoot\shoot.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Buzzer</GroupName>
+          <Files>
+            <File>
+              <FileName>buzzer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\UserCode\Buzzer\buzzer.c</FilePath>
             </File>
           </Files>
         </Group>

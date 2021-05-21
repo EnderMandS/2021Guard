@@ -33,9 +33,9 @@ void CAN_Filter_Init(void)
   HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
 
 
-  CAN_Filter_STM.SlaveStartFilterBank = 14;
-  CAN_Filter_STM.FilterBank = 14;
-  HAL_CAN_ConfigFilter(&hcan2, &CAN_Filter_STM);
-  HAL_CAN_Start(&hcan2);
-  HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING);
+//  CAN_Filter_STM.SlaveStartFilterBank = 14;
+//  CAN_Filter_STM.FilterBank = 14;
+//  HAL_CAN_ConfigFilter(&hcan2, &CAN_Filter_STM);
+//  HAL_CAN_Start(&hcan2);
+//  HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING);
 }

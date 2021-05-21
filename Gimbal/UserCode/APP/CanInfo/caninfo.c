@@ -1,10 +1,3 @@
-/*
- * @Descripttion: CAN通信回调中断数据处理
- * @version: V1.0
- * @Author: Xpj
- * @LastEditors: Xpj
- * @Date: 2020-10-26 14:33:35
- */
 #include "caninfo.h"
 #include "main.h"
 #include "can.h"
@@ -25,6 +18,7 @@ extern int Firc_Speed;
 extern uint8_t color;
 uint32_t Can_Error=0;
 bool Shootable=true;
+uint8_t Inspect_Position=0;
 
 /**
  * @brief: 数据处理,将接收到数据传入指针并解算
@@ -120,6 +114,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 			case 0x20B:
 					get_gear_motor_measure(&gear_motor_data[rx_header.StdId-Motor_Base], rx_data);
 				break;
+			
 			case 0x1AA:
 					color=rx_data[0];
 					Chassic_Dir=rx_data[1];
@@ -128,16 +123,18 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 					Outpost_Alive=rx_data[4];
 					Base_Shield=rx_data[5];
 					Shootable=rx_data[6];
-			
+
+					if(rx_data[7]!=0 && Gimbal_Inspect_Busy==false)
+					{
+						Gimbal_Inspect_Busy=true;
+						Inspect_Position=rx_data[7];
+					}
+
 					Limit_Yaw=Base_Shield;	//没有基地护盾不限制Yaw
 				break;
 		default:
 				break;
 		}
-	}
-	else if (hcan == &hcan2)
-	{
-			;
 	}
 }
 

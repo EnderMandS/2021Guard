@@ -8,11 +8,12 @@
 
 #define Inspect_Empty 1
 float Pitch_Inspect_Speed = 0.1f;	//0.08
-float Yaw_Inspect_Speed = 0.18f;	//0.15
+float Yaw_Inspect_Speed = 0.18f;	//it will be changed in function Gimbal_Inspect_setSpeed
 #define Yaw_Inspect_Speed_Offset 0.025f
 
 bool Limit_Yaw=true;
 bool Pitch_USE_Gyro=false;		//陀螺仪太抖、弃用，仅保留代码
+//#define Zero_Sample_Once		//零点采样，注释掉采样四次
 
 /*
 柱子
@@ -163,42 +164,36 @@ void Gimbal_Sotf_Start(void)
 		}
 		else
 		{
-			if ((pitch_angle < Pitch_Limit_Top + 0.2f && pitch_angle > Pitch_Limit_Top - 0.2f)&&(yaw_angle < yaw_center + 0.5f && yaw_angle > yaw_center - 0.5f))
+			if((pitch_angle < Pitch_Limit_Top + 0.2f && pitch_angle > Pitch_Limit_Top - 0.2f)&&(yaw_angle < yaw_center + 0.5f && yaw_angle > yaw_center - 0.5f))
 			{
-				if (Set_Zero_Complete == false)
+				if(Set_Zero_Complete == false)
 				{
 					++Set_Zero;
-					if (Set_Zero > 500)
+					if(Set_Zero > 500)
 					{
-						if (Set_Pitch_Zero_Point() == true)
+						if(Set_Pitch_Zero_Point() == true)
 						{
-							if(Limit_Yaw==true)
-							{
+							#ifdef Zero_Sample_Once
 								Set_Zero_Complete = true;
 								Set_Zero = 0;
 								control_allow = 1;
 								sotf_start = 0;
-							}
-							else
-							{
+							#else
 								++Set_State;
 								Yaw_Soft_Start_Speed_Ratio=3.f;
+								Set_Zero = 0;
 								if(Set_State<4)
-								{
-									Set_Zero=0;
 									yaw_center-=90;
-									yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
-								}
 								else if(Set_State==4)
+									yaw_center=301.5f;
+								else if(Set_State==5)
 								{
 									Yaw_Soft_Start_Speed_Ratio=1;
-									yaw_center=301.5f;
-									Set_Zero = 0;
 									Set_Zero_Complete = true;
 									control_allow = 1;
 									sotf_start = 0;
 								}
-							}
+							#endif
 						}
 					}
 				}
@@ -210,6 +205,32 @@ void Gimbal_Sotf_Start(void)
 			}
 		}
 	}
+}
+
+bool Gimbal_Keep_Middle(void)
+{
+	static bool Return_State=false;	//防止因为云台抖动停止读取轨道长度
+	if(yaw_angle < yaw_center + 0.5f && yaw_angle > yaw_center - 0.5f)
+		Return_State=true;
+	else
+	{
+		if(yaw_angle<Yaw_Limit_Min)
+			Return_State=false;
+		float dif=yaw_center-yaw_angle;
+		int Direction=0;
+		if(dif<=-180)
+			Direction=1;
+		else if(dif>-180 && dif <=0)
+			Direction=-1;
+		else if(dif>0 && dif<=180)
+			Direction=1;
+		else if(dif>180)
+			Direction=-1;
+		yaw_angle += 0.05f*3.f*Direction;
+		yaw_angle = loop_fp32_constrain(yaw_angle, 0, 360);
+		yaw = Control_YawPID(yaw_angle);
+	}
+	return Return_State;
 }
 
 void Gimbal_Remote_Control(void)
@@ -313,7 +334,12 @@ void Gimbal_Automatic_control(void)
 			pitch = Control_PitchPID(pitch_angle);
 		}
 		else
-			Gimbal_Inspect();
+		{
+			if(Gimbal_Inspect_Busy==false)
+				Gimbal_Inspect();
+			else
+				Gimbal_Position_Inspect();
+		}
 	}
 }
 
@@ -410,23 +436,24 @@ void Gimbal_Inspect(void) //巡检
 {
 	if(Pitch_USE_Gyro==true)
 	{
-		if(Pitch_dir==1)
-			if(pitch_angle>=Pitch_Gyro_Top-16.f-Inspect_Empty)
-				Pitch_dir=-1;
-		if(Pitch_dir==-1)
-			if(pitch_angle<=Pitch_Gyro_Bottom+12.5f+Inspect_Empty)
-				Pitch_dir=1;
+		if(Pitch_dir==1 && pitch_angle>=Pitch_Gyro_Top-16.f-Inspect_Empty)
+			Pitch_dir=-1;
+		if(Pitch_dir==-1 && pitch_angle<=Pitch_Gyro_Bottom+12.5f+Inspect_Empty)
+			Pitch_dir=1;
 	}
 	else
 	{
-		if(Pitch_dir==1)
-			if(pitch_angle>=Pitch_Limit_Top-16.f-Inspect_Empty)
-				Pitch_dir=-1;
-		if(Pitch_dir==-1)
-			if(pitch_angle<=Pitch_Limit_Bottom+12.5f+Inspect_Empty)
-				Pitch_dir=1;
+		if(Pitch_dir==1 && pitch_angle>=Pitch_Limit_Top-16.f-Inspect_Empty)
+			Pitch_dir=-1;
+		if(Pitch_dir==-1 && pitch_angle<=Pitch_Limit_Bottom+12.5f+Inspect_Empty)
+			Pitch_dir=1;
 	}
 	pitch_angle += Pitch_dir*Pitch_Inspect_Speed;
+	if(Pitch_USE_Gyro==true)
+		Limit(pitch_angle, Pitch_Gyro_Bottom, Pitch_Gyro_Top)
+	else
+		Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top)
+	pitch = Control_PitchPID(pitch_angle);
 
 	if(Limit_Yaw==false)
 	{
@@ -434,10 +461,9 @@ void Gimbal_Inspect(void) //巡检
 			yaw_angle += Yaw_Inspect_Speed*3.f*Yaw_dir;
 		else
 			yaw_angle += Yaw_Inspect_Speed*Yaw_dir;
-		yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
 		if( Chassic_Last_Dir==-1 || Chassic_Dir==-1 )
 		{
-			if( Yaw_dir==1 && yaw_angle>195.f && yaw_angle<yaw_angle<(195.f+Yaw_Limit_Min)/2.f )
+			if( Yaw_dir==1 && yaw_angle>195.f && yaw_angle<(195.f+Yaw_Limit_Min)/2.f )
 				Yaw_dir=-1;
 			else if( Yaw_dir==-1 && yaw_angle>=(195.f+Yaw_Limit_Min)/2.f && yaw_angle<Yaw_Limit_Min )
 				Yaw_dir=1;
@@ -445,28 +471,373 @@ void Gimbal_Inspect(void) //巡检
 	}
 	else
 	{
-		if(Yaw_dir==1)
-			if(yaw_angle>=Yaw_Limit_Max-Inspect_Empty)
-				Yaw_dir=-1;
-		if(Yaw_dir==-1)
-			if(yaw_angle<=Yaw_Limit_Min+Inspect_Empty)
-				Yaw_dir=1;
+		float Dead_Zone_Middle=(Yaw_Limit_Min+Yaw_Limit_Max)/2.f;
+		if( yaw_angle>Yaw_Limit_Max && yaw_angle<=Dead_Zone_Middle )
+			Yaw_dir=-1;
+		else if( yaw_angle<Yaw_Limit_Min && yaw_angle>Dead_Zone_Middle )
+			Yaw_dir=1;
 		yaw_angle += Yaw_dir*Yaw_Inspect_Speed;
-		if(Yaw_dir==Chassic_Dir && Chassic_Dir==Chassic_Last_Dir)
-			yaw_angle-=Chassic_Dir*Yaw_Inspect_Speed_Offset;
-		Limit(yaw_angle,Yaw_Limit_Min,Yaw_Limit_Max);
 	}
+	yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
 	yaw = Control_YawPID(yaw_angle);
-	
+}
+
+bool Gimbal_Inspect_Busy=false;	//send back to chassis
+#define Position_Inspect_Time 5
+uint8_t Position_Inspect_cnt=0;
+int Last_Yaw_Dir=0;
+void Gimbal_Position_Inspect(void)
+{
 	if(Pitch_USE_Gyro==true)
 	{
-		Limit(pitch_angle, Pitch_Gyro_Bottom, Pitch_Gyro_Top);
+		if(Pitch_dir==1 && pitch_angle>=Pitch_Gyro_Top-16.f-Inspect_Empty)
+			Pitch_dir=-1;
+		if(Pitch_dir==-1 && pitch_angle<=Pitch_Gyro_Bottom+12.5f+Inspect_Empty)
+			Pitch_dir=1;
 	}
 	else
 	{
-		Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top);
+		if(Pitch_dir==1 && pitch_angle>=Pitch_Limit_Top-16.f-Inspect_Empty)
+			Pitch_dir=-1;
+		if(Pitch_dir==-1 && pitch_angle<=Pitch_Limit_Bottom+12.5f+Inspect_Empty)
+			Pitch_dir=1;
 	}
+	pitch_angle += Pitch_dir*Pitch_Inspect_Speed;
+	if(Pitch_USE_Gyro==true)
+		Limit(pitch_angle, Pitch_Gyro_Bottom, Pitch_Gyro_Top)
+	else
+		Limit(pitch_angle, Pitch_Limit_Bottom, Pitch_Limit_Top)
 	pitch = Control_PitchPID(pitch_angle);
+	
+	if(Limit_Yaw==false)
+	{
+		if(Chassic_Dir==1 && Chassic_Last_Dir==1)
+		{
+			switch(Inspect_Position)	//quadrant
+			{
+				case 1:
+				{
+					float Dead_Zone_Middle=(301.5f+Yaw_Limit_Max)/2.f;
+					if( yaw_angle>Yaw_Limit_Max && yaw_angle<=Dead_Zone_Middle )
+					{
+						yaw_angle=Yaw_Limit_Max;
+						Yaw_dir=-1;
+					}
+					else if( yaw_angle<301.5f && yaw_angle>Dead_Zone_Middle )
+					{
+						yaw_angle=301.5f;
+						Yaw_dir=1;
+					}
+				}
+				break;
+				
+				case 2:
+				{
+					if(yaw_angle>301.5f)
+					{
+						yaw_angle=301.5f;
+						Yaw_dir=-1;
+					}
+					else if(yaw_angle<Yaw_Limit_Min)
+					{
+						yaw_angle=Yaw_Limit_Min;
+						Yaw_dir=1;
+					}
+				}
+				break;
+				
+				case 3:
+				{
+					if(yaw_angle>191.f)
+					{
+						yaw_angle=191.f;
+						Yaw_dir=-1;
+					}
+					else if(yaw_angle<121.5f )
+					{
+						yaw_angle=121.5f;
+						Yaw_dir=1;
+					}
+				}
+				break;
+				
+				case 4:
+				{
+					if(yaw_angle>121.5f)
+					{
+						yaw_angle=121.5f;
+						Yaw_dir=-1;
+					}
+					else if(yaw_angle<44.6f )
+					{
+						yaw_angle=44.6f;
+						Yaw_dir=1;
+					}
+				}
+				break;
+				
+				default:
+				{
+					if( ((yaw_angle>191.f)&&(yaw_angle<231.f)) || ((yaw_angle>18.6f)&&(yaw_angle<44.6f)) )	//在柱子处加快巡检速度
+						yaw_angle += Yaw_Inspect_Speed*3.f*Yaw_dir;
+					else
+						yaw_angle += Yaw_Inspect_Speed*Yaw_dir;
+					if( Chassic_Last_Dir==-1 || Chassic_Dir==-1 )
+					{
+						if( Yaw_dir==1 && yaw_angle>195.f && yaw_angle<(195.f+Yaw_Limit_Min)/2.f )
+							Yaw_dir=-1;
+						else if( Yaw_dir==-1 && yaw_angle>=(195.f+Yaw_Limit_Min)/2.f && yaw_angle<Yaw_Limit_Min )
+							Yaw_dir=1;
+					}
+				}
+				break;
+			}
+		}
+		else
+		{
+			uint8_t Yaw_At_Quadrant=0;
+			if(yaw_nowangle>=301.5f || yaw_nowangle<31.5f)
+				Yaw_At_Quadrant=1;
+			else if(yaw_nowangle<301.5f && yaw_nowangle>=211.5f)
+				Yaw_At_Quadrant=2;
+			else if(yaw_nowangle<211.5f && yaw_nowangle>=121.5f)
+				Yaw_At_Quadrant=3;
+			else if(yaw_nowangle<121.5f && yaw_nowangle>=31.5f)
+				Yaw_At_Quadrant=4;
+			
+			switch(Inspect_Position)	//quadrant
+			{
+				case 1:
+				{
+					float Dead_Zone_Middle=(301.5f+Yaw_Limit_Max)/2.f;
+					if( yaw_angle>Yaw_Limit_Max && yaw_angle<=Dead_Zone_Middle )
+					{
+						switch(Yaw_At_Quadrant)
+						{
+							case 3:
+								yaw_angle=65.75f;
+							break;
+							
+							default:
+								yaw_angle=Yaw_Limit_Max;
+							break;
+						}
+						Yaw_dir=-1;
+					}
+					else if( yaw_angle<301.5f && yaw_angle>Dead_Zone_Middle )
+					{
+						switch(Yaw_At_Quadrant)
+						{
+							case 3:
+								yaw_angle=65.75f;
+							break;
+							
+							case 4:
+								yaw_angle=359.f;
+							break;
+							
+							default:
+								yaw_angle=301.f;
+							break;
+						}
+						Yaw_dir=1;
+					}
+				}
+				break;
+				
+				case 2:
+				{
+					if(yaw_angle>301.5f)
+					{
+						switch(Yaw_At_Quadrant)
+						{
+							case 3:
+								yaw_angle=65.75f;
+							break;
+							
+							case 4:
+								yaw_angle=359.f;
+							break;
+							
+							default:
+								yaw_angle=301.5f;
+							break;
+						}
+						Yaw_dir=-1;
+					}
+					else if(yaw_angle<Yaw_Limit_Min)
+					{
+						yaw_angle=Yaw_Limit_Min;
+						Yaw_dir=1;
+					}
+				}
+				break;
+				
+				case 3:
+				{
+					if(yaw_angle>191.f)
+					{
+						switch(Yaw_At_Quadrant)
+						{
+							case 2:
+								yaw_angle=359.f;
+							break;
+							
+							case 1:
+								yaw_angle=65.75f;
+							break;
+							
+							default:
+								yaw_angle=191.f;
+							break;
+						}
+						Yaw_dir=-1;
+					}
+					else if(yaw_angle<121.5f )
+					{
+						switch(Yaw_At_Quadrant)
+						{
+							case 2:
+								yaw_angle=359.f;
+							break;
+							
+							case 1:
+								yaw_angle=65.75f;
+							break;
+							
+							default:
+								yaw_angle=121.5f;
+							break;
+						}
+						Yaw_dir=1;
+					}
+				}
+				break;
+				
+				case 4:
+				{
+					if(yaw_angle>121.5f)
+					{
+						switch(Yaw_At_Quadrant)
+						{
+							case 2:
+								yaw_angle=359.f;
+							break;
+							
+							case 1:
+								yaw_angle=65.75f;
+							break;
+							
+							default:
+								yaw_angle=121.5f;
+							break;
+						}
+						Yaw_dir=-1;
+					}
+					else if(yaw_angle<44.6f )
+					{
+						switch(Yaw_At_Quadrant)
+						{
+							case 2:
+								yaw_angle=359.f;
+							break;
+							
+							case 3:
+								yaw_angle=65.75f;
+							break;
+							
+							default:
+								yaw_angle=44.6f;
+							break;
+						}
+						Yaw_dir=1;
+					}
+				}
+				break;
+				
+				default:
+				{
+					if( ((yaw_angle>191.f)&&(yaw_angle<231.f)) || ((yaw_angle>18.6f)&&(yaw_angle<44.6f)) )	//在柱子处加快巡检速度
+						yaw_angle += Yaw_Inspect_Speed*3.f*Yaw_dir;
+					else
+						yaw_angle += Yaw_Inspect_Speed*Yaw_dir;
+					if( Chassic_Last_Dir==-1 || Chassic_Dir==-1 )
+					{
+						if( Yaw_dir==1 && yaw_angle>195.f && yaw_angle<(195.f+Yaw_Limit_Min)/2.f )
+							Yaw_dir=-1;
+						else if( Yaw_dir==-1 && yaw_angle>=(195.f+Yaw_Limit_Min)/2.f && yaw_angle<Yaw_Limit_Min )
+							Yaw_dir=1;
+					}
+				}
+				break;
+			}
+		}
+	}
+	else
+	{
+		switch(Inspect_Position)	//quadrant
+		{
+			case 1:
+			{
+				float Dead_Zone_Middle=(301.5f+Yaw_Limit_Max)/2.f;
+				if( yaw_angle>Yaw_Limit_Max && yaw_angle<=Dead_Zone_Middle )
+				{
+					yaw_angle=Yaw_Limit_Max;
+					Yaw_dir=-1;
+				}
+				else if( yaw_angle<301.5f && yaw_angle>Dead_Zone_Middle )
+				{
+					yaw_angle=301.5f;
+					Yaw_dir=1;
+				}
+			}
+			break;
+			
+			case 2:
+			{
+				float Dead_Zone_Middle=(301.5f+211.5f)/2.f-180;
+				if( yaw_angle>301.5f || yaw_angle<=Dead_Zone_Middle )
+				{
+					yaw_angle=301.5f;
+					Yaw_dir=-1;
+				}
+				else if( yaw_angle<Yaw_Limit_Min && yaw_angle>Dead_Zone_Middle )
+				{
+					yaw_angle=Yaw_Limit_Min;
+					Yaw_dir=1;
+				}
+			}
+			break;
+			
+			default:
+			{
+				float Dead_Zone_Middle=(Yaw_Limit_Min+Yaw_Limit_Max)/2.f;
+				if( yaw_angle>Yaw_Limit_Max && yaw_angle<=Dead_Zone_Middle )
+				{
+					yaw_angle=Yaw_Limit_Max;
+					Yaw_dir=-1;
+				}
+				else if( yaw_angle<Yaw_Limit_Min && yaw_angle>Dead_Zone_Middle )
+				{
+					yaw_angle=Yaw_Limit_Min;
+					Yaw_dir=1;
+				}
+			}
+			break;
+		}
+	}
+	yaw_angle += Yaw_dir*Yaw_Inspect_Speed;
+	yaw = Control_YawPID(yaw_angle);
+	if(Yaw_dir!=Last_Yaw_Dir)
+	{
+		++Position_Inspect_cnt;
+		if(Position_Inspect_cnt>Position_Inspect_Time)
+		{
+			Gimbal_Inspect_Busy=false;	//clear flag, to back to normal inspect
+			Inspect_Position=0;
+		}
+	}
+	Last_Yaw_Dir=Yaw_dir;
 }
 
 float Yaw_Motor_Angle_Change(void)
@@ -491,49 +862,53 @@ float Pitch_Gyro_Max = -1;
 float Pitch_Gyro_Min = 361;
 bool Set_Pitch_Zero_Point(void) //采样取平均确定Pitch零点
 {
-	if (Hi229_Update == 1)
+	static uint32_t Time_Div=0;
+	if(++Time_Div%2==0)		//二分频	200Hz
 	{
-		Hi229_Update = 0;
-		//Update data
-		Pitch_Gyro_Buf[cnt] = eular[0];
-		Pitch_Motor_Buf[cnt] = gear_motor_data[Gimbal_P].angle;
-		//Calculate Max&Min
-		if (Pitch_Gyro_Buf[cnt] > Pitch_Gyro_Max)
-			Pitch_Gyro_Max = Pitch_Gyro_Buf[cnt];
-		if (Pitch_Gyro_Buf[cnt] < Pitch_Gyro_Min)
-			Pitch_Gyro_Min = Pitch_Gyro_Buf[cnt];
-
-		--cnt;
-		if(cnt<0)
+		if (Hi229_Update == 1)
 		{
-			if(Pitch_Gyro_Max-Pitch_Gyro_Min > Max_Error) //超过最大允许误差
-			{
-				Pitch_Gyro_Max = -1;
-				Pitch_Gyro_Min = 361;
-				for (; cnt<Sampling_Times; ++cnt)
-					Pitch_Gyro_Buf[cnt]=Pitch_Motor_Buf[cnt]=0;
-				return false;
-			}
+			Hi229_Update = 0;
+			//Update data
+			Pitch_Gyro_Buf[cnt] = eular[0];
+			Pitch_Motor_Buf[cnt] = gear_motor_data[Gimbal_P].angle;
+			//Calculate Max&Min
+			if (Pitch_Gyro_Buf[cnt] > Pitch_Gyro_Max)
+				Pitch_Gyro_Max = Pitch_Gyro_Buf[cnt];
+			if (Pitch_Gyro_Buf[cnt] < Pitch_Gyro_Min)
+				Pitch_Gyro_Min = Pitch_Gyro_Buf[cnt];
 
-			for(cnt=0; cnt<Sampling_Times; ++cnt)
+			--cnt;
+			if(cnt<0)
 			{
-				Gyro_Average += Pitch_Gyro_Buf[cnt];
-				Motor_Average += Pitch_Motor_Buf[cnt];
-			}
-			Gyro_Average/=(Sampling_Times*1.f);
-			Motor_Average/=(Sampling_Times*1.f);
-			Zero_Offset[Set_State]=-(Gyro_Average+Motor_Average*Motor_Ecd_to_Ang-Pitch_Limit_Top);
-			
-			if(Limit_Yaw==false)
-			{
-				Pitch_Gyro_Max = -1;
-				Pitch_Gyro_Min = 361;
-				Gyro_Average=Motor_Average=0;
+				if(Pitch_Gyro_Max-Pitch_Gyro_Min > Max_Error) //超过最大允许误差
+				{
+					Pitch_Gyro_Max = -1;
+					Pitch_Gyro_Min = 361;
+					for (; cnt<Sampling_Times; ++cnt)
+						Pitch_Gyro_Buf[cnt]=Pitch_Motor_Buf[cnt]=0;
+					return false;
+				}
+
 				for(cnt=0; cnt<Sampling_Times; ++cnt)
-					Pitch_Gyro_Buf[cnt]=Pitch_Motor_Buf[cnt]=0;
-			}
+				{
+					Gyro_Average += Pitch_Gyro_Buf[cnt];
+					Motor_Average += Pitch_Motor_Buf[cnt];
+				}
+				Gyro_Average/=(Sampling_Times*1.f);
+				Motor_Average/=(Sampling_Times*1.f);
+				Zero_Offset[Set_State]=-(Gyro_Average+Motor_Average*Motor_Ecd_to_Ang-Pitch_Limit_Top);
+				
+				if(Limit_Yaw==false)
+				{
+					Pitch_Gyro_Max = -1;
+					Pitch_Gyro_Min = 361;
+					Gyro_Average=Motor_Average=0;
+					for(cnt=0; cnt<Sampling_Times; ++cnt)
+						Pitch_Gyro_Buf[cnt]=Pitch_Motor_Buf[cnt]=0;
+				}
 
-			return true;
+				return true;
+			}
 		}
 	}
 	return false;

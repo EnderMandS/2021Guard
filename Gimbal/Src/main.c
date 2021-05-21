@@ -37,6 +37,7 @@
 #include "classic.h"
 #include "caninfo.h"
 #include "gimbal.h"
+#include "buzzer.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,6 +57,7 @@ uint8_t color=0;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -100,18 +102,21 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_CAN1_Init();
-  MX_CAN2_Init();
   MX_TIM1_Init();
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   MX_USART6_UART_Init();
+  MX_TIM4_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 	CAN_Filter_Init();
-	Bsp_UART_Receive_IT(&huart3,UART_Buffer,36);   //启动串口接收//遥控
+	Bsp_UART_Receive_IT(&huart3,UART_Buffer,36);   //遥控
 	Bsp_UART_Receive_IT(&huart1, View_Buf, VIEW_BUF_LEN); //视觉
 	Bsp_UART_Receive_IT(&huart6, Groy_Data_Buf, GROY_DATA_BUF_LEN);		//裁判系统
 	Shoot_Speed_Pid_Init();
-	HAL_TIM_Base_Start_IT(&htim1);
+	HAL_TIM_Base_Start_IT(&htim1);	//400Hz
+	Buzzer_Init();
+	HAL_TIM_Base_Start_IT(&htim4);	//1kHz
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -137,7 +142,7 @@ int main(void)
 			Send_Position_Buf[0] = 0x5A;
 			memcpy(Send_Position_Buf+1,send_pitch.c,4);
 			memcpy(Send_Position_Buf+5,send_yaw.c,4);
-			Send_Position_Buf[9]=(25.f-10)*10;	//shoot_velocity=(射速-10)*10
+			Send_Position_Buf[9]=(25.f-10)*10;	//shoot_velocity=(25-10)*10
 			Send_Position_Buf[10] = color;
 			Send_Position_Buf[11] = 0xA5;
 			Uart1_TransmissionT_Data(Send_Position_Buf,COUNTOF(Send_Position_Buf));

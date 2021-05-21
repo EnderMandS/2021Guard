@@ -60,6 +60,7 @@ extern bool Base_Shield;
 extern bool Outpost_Alive;
 extern uint32_t Can_Error;
 extern bool Shootable;
+extern uint8_t Inspect_Position;
 
 void get_gear_motor_measure(gear_moto_measure_t *ptr, uint8_t rxd[]);
 void get_motor_measure(gear_moto_measure_t *ptr, uint8_t rxd[]);
