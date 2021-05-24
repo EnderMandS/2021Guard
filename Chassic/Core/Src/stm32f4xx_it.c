@@ -33,6 +33,7 @@
 #include "bsp_judge.h"
 #include <stdlib.h>
 #include <stdbool.h>
+#include "buzzer.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -76,6 +77,7 @@ extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim6;
 extern DMA_HandleTypeDef hdma_usart6_rx;
 extern UART_HandleTypeDef huart6;
 /* USER CODE BEGIN EV */
@@ -258,15 +260,20 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	++TIM1_cnt;
 	if(TIM1_cnt==0xFFFFFFFF)
 		TIM1_cnt=0;
+	
+	static uint32_t Ka_Dan_cnt=0;
+	static bool Ka_Dan=false;
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
 	if(Motor_Power_Up==0)
 	{
-		if(	gear_motor_data[Chassic_L].real_current!=0 &&
-				gear_motor_data[Chassic_R].real_current!=0 &&
-				gear_motor_data[Cartridge].real_current!=0)
+//		if(	gear_motor_data[Chassic_L].real_current!=0 &&
+//				gear_motor_data[Chassic_R].real_current!=0 &&
+//				gear_motor_data[Cartridge].real_current!=0)
 			Motor_Power_Up=1;
+//		else
+//			Buzzer_ms(1,50,2000);
 	}
 	else
 	{
@@ -288,6 +295,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				{
 					direction = touch_Left;
 					Changing_Speed_Flag=1;	//方向改变，标志位置1
+					Buzzer_Short(1);
 				}
 			}
 			else if(HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_RESET)
@@ -298,6 +306,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				{
 					direction = touch_Right;
 					Changing_Speed_Flag=1;	//方向改变，标志位置1
+					Buzzer_Short(1);
 				}
 			}
 		}
@@ -401,9 +410,9 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			
 			default:	//停止动作
 			{
-				motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,0);
 				for(uint8_t i=0; i<2; ++i)
 				{
+					motor_pid[i].target=0;
 					motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
 					Motor_Output[ Moto_ID[i] ]=0;
 				}
@@ -417,61 +426,101 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		else if(Heat_Rest<100)
 			Shoot_Ultra_Mode=0;
 		
-		switch(Shoot_State)	//射击模式
+		
+		if(Shoot_State!=0)
 		{
-			case 1:		//Single
-				if(Heat_Rest>20)
+			if(Ka_Dan==false)
+			{
+				switch(Shoot_State)	//射击模式
 				{
-					Shoot_State=0;
-					Cartridge_angle=(Cartridge_angle+45)%360;
-					Cartridge_wheel.output=gear_moto_position_pid_calc(&Cartridge_Position_Pid[OUT],&Cartridge_Position_Pid[IN],Cartridge_angle,gear_motor_data[Cartridge].real_total_angle,gear_motor_data[Cartridge].speed_rpm);
+					case 1:		//Single
+						if(Heat_Rest>20)
+						{
+							Shoot_State=0;
+							Cartridge_angle=(Cartridge_angle+45)%360;
+							Cartridge_wheel.output=gear_moto_position_pid_calc(&Cartridge_Position_Pid[OUT],&Cartridge_Position_Pid[IN],Cartridge_angle,gear_motor_data[Cartridge].real_total_angle,gear_motor_data[Cartridge].speed_rpm);
+						}
+						else
+						{
+							Cartridge_wheel_PID_Calc(0);
+							Motor_Output[Cartridge]=0;
+						}
+					break;
+					
+					case 2:		//Fast
+						if(Shoot_Ultra_Mode==1)
+							Cartridge_wheel_PID_Calc(Cartridge_Ultra);
+						else if(Heat_Rest>50)
+							Cartridge_wheel_PID_Calc(Cartridge_Fast);
+						else
+							Cartridge_wheel_PID_Calc(Cartridge_Slow);
+						Motor_Output[Cartridge]=Cartridge_wheel.output;
+					break;
+					
+					case 3:		//Slow
+						if(Heat_Rest>20)
+						{
+							Cartridge_wheel_PID_Calc(Cartridge_Slow);
+							Motor_Output[Cartridge]=Cartridge_wheel.output;
+						}
+						else
+						{
+							Cartridge_wheel_PID_Calc(0);
+							Motor_Output[Cartridge]=0;
+						}
+					break;
+					
+					default:	//Load
+		//				if(Switch_State[1]==0)
+		//				{
+		//					Cartridge_wheel_PID_Calc(1000);
+		//					Motor_Output[Cartridge]=Cartridge_wheel.output;
+		//				}
+		//				else
+		//				{
+		//					Cartridge_wheel_PID_Calc(0);
+		//					Motor_Output[Cartridge]=0;
+		//				}
+						Cartridge_wheel_PID_Calc(0);
+						Motor_Output[Cartridge]=0;
+					break;
 				}
-				else
+			}
+			
+			if(Motor_Output[Cartridge]>9500 && Ka_Dan==false)
+			{
+				++Ka_Dan_cnt;
+				if(Ka_Dan_cnt>400)
 				{
-					Cartridge_wheel_PID_Calc(0);
-					Motor_Output[Cartridge]=0;
+					Ka_Dan=true;
+					Ka_Dan_cnt=400;
+					Buzzer_Short(1);
 				}
-			break;
-			
-			case 2:		//Fast
-				if(Shoot_Ultra_Mode==1)
-					Cartridge_wheel_PID_Calc(Cartridge_Ultra);
-				else if(Heat_Rest>50)
-					Cartridge_wheel_PID_Calc(Cartridge_Fast);
-				else
-					Cartridge_wheel_PID_Calc(Cartridge_Slow);
-				Motor_Output[Cartridge]=Cartridge_wheel.output;
-			break;
-			
-			case 3:		//Slow
-				if(Heat_Rest>20)
+			}
+			else if(Ka_Dan==true)
+			{
+				--Ka_Dan_cnt;
+				if(Ka_Dan_cnt!=0)
 				{
-					Cartridge_wheel_PID_Calc(Cartridge_Slow);
+					Cartridge_wheel_PID_Calc(-Cartridge_Fast);
 					Motor_Output[Cartridge]=Cartridge_wheel.output;
 				}
 				else
-				{
-					Cartridge_wheel_PID_Calc(0);
-					Motor_Output[Cartridge]=0;
-				}
-			break;
-			
-			default:	//Load
-//				if(Switch_State[1]==0)
-//				{
-//					Cartridge_wheel_PID_Calc(1000);
-//					Motor_Output[Cartridge]=Cartridge_wheel.output;
-//				}
-//				else
-//				{
-//					Cartridge_wheel_PID_Calc(0);
-//					Motor_Output[Cartridge]=0;
-//				}
-				Cartridge_wheel_PID_Calc(0);
-				Motor_Output[Cartridge]=0;
-			break;
+					Ka_Dan=false;
+			}
+			else
+				Ka_Dan_cnt=0;
 		}
-		
+		else
+		{
+			Cartridge_wheel_PID_Calc(0);
+			Motor_Output[Cartridge]=0;
+		}
+//		if(gear_motor_data[Cartridge].temperate>90)		//Cartridge temperate protect
+//		{
+//			Motor_Output[Cartridge]=0;
+//			Buzzer_Short(3);
+//		}
 		
 		if(TIM1_cnt%2==0)		//2 freq div
 		{
@@ -491,10 +540,21 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			
 			Data[5]=Field_Event_Data.Base_Shield_Existence;	//基地护盾
 			
-			if(BulletRemaining.bullet_remaining_num_17mm==0)	//500发
-				Data[6]=false;
-			else
+			#warning	//wait for test
+//			if(Shoot_cnt>=500)	//500发		Shootable
+//				Data[6]=false;
+//			else
 				Data[6]=true;
+			
+//			if( (is_red_or_blue()==BLUE && Robot_Interactive.Receive_ID==107) ||
+//					(is_red_or_blue()==RED  && Robot_Interactive.Receive_ID==7))
+//			{
+//				if(Inspect_Position==0 && Robot_Interactive.Data[0]>0 && Robot_Interactive.Data[0]<=4)
+//				{
+//					Inspect_Position=Robot_Interactive.Data[0];
+////					Buzzer_Short(1);
+//				}
+//			}
 			
 			Data[7]=Inspect_Position;	//receive data from other robot, send to gimbal where to inspect
 			
@@ -516,6 +576,48 @@ void TIM2_IRQHandler(void)
   /* USER CODE BEGIN TIM2_IRQn 1 */
 
   /* USER CODE END TIM2_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM6 global interrupt, DAC1 and DAC2 underrun error interrupts.
+  */
+void TIM6_DAC_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM6_DAC_IRQn 0 */
+	static uint32_t TIM6_cnt=0;
+	++TIM6_cnt;
+  /* USER CODE END TIM6_DAC_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim6);
+  /* USER CODE BEGIN TIM6_DAC_IRQn 1 */
+	if(Buzzer_Busy==false && Buzzer_cnt!=0 && Buzzer_On_Time!=0)
+		Buzzer_Busy=true;
+	if(Buzzer_Busy==true)
+	{
+		if(TIM6_cnt<Buzzer_On_Time)
+		{
+			if(Buzzer_Working==false)
+			{
+				Buzzer_ON();
+				Buzzer_Working=true;
+			}
+		}
+		else if(TIM6_cnt<Buzzer_On_Time+Buzzer_Off_Time)
+		{
+			if(Buzzer_Working==true)
+			{
+				Buzzer_OFF();
+				Buzzer_Working=false;
+			}
+		}
+		else
+		{
+			TIM6_cnt=0;
+			--Buzzer_cnt;
+			if(Buzzer_cnt==0)
+				Buzzer_Busy=false;
+		}
+	}
+  /* USER CODE END TIM6_DAC_IRQn 1 */
 }
 
 /**

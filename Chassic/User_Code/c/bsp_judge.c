@@ -4,6 +4,7 @@
 #include "shoot.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "buzzer.h"
 
 bool No_Bullet=false;
 
@@ -20,17 +21,26 @@ void Rand_Speed_Up_Init(void)
 void Check_Being_Hit(void)	//受到伤害加速
 {
 	#ifndef USE_SPRING
+		if(PowerHeatData.chassis_power_buffer>190 && Changing_Speed_Flag==0 && Hurt_Data_Update==false)		//随机加速
+		{
+			--Rand_Speed_Up_Time;
+			if(Rand_Speed_Up_Time==0)
+				Hurt_Data_Update=true;
+		}
+
 		if(Hurt_Data_Update==true)
 		{
 			if(Being_Hit==0)
 			{
 				Being_Hit=1;
-	//			SpeedUp_Time=(rand()%3+1)*200;	//1-3s
-				SpeedUp_Time=3*200;
+				SpeedUp_Time=(rand()%3+1)*200;
 				if(PowerHeatData.chassis_power_buffer>75)
 				{
 					if(Classic_Move_Speed==Classic_Middle)
+					{
 						Classic_Move_Speed=Classic_Fast;
+						Buzzer_Short(1);
+					}
 				}
 			}
 		}
@@ -39,10 +49,11 @@ void Check_Being_Hit(void)	//受到伤害加速
 			++Time_cnt;
 			if(Time_cnt>SpeedUp_Time)
 			{
+				Rand_Speed_Up_Init();
 				Hurt_Data_Update=false;
 				Being_Hit=Time_cnt=0;
 				if(Classic_Move_Speed==Classic_Fast)
-					Classic_Move_Speed=Classic_Middile;	//恢复巡检速度
+					Classic_Move_Speed=Classic_Middle;	//恢复巡检速度
 			}
 		}
 	#else
@@ -62,7 +73,10 @@ void Check_Being_Hit(void)	//受到伤害加速
 				if(PowerHeatData.chassis_power_buffer>75)
 				{
 					if(Classic_Move_Speed==Chassic_Spring_Middle)
+					{
 						Classic_Move_Speed=Chassic_Spring_Fast;
+						Buzzer_Short(1);
+					}
 				}
 			}
 		}
@@ -91,6 +105,7 @@ void Rand_Dir_Change(void)
 	{
 		direction=-direction;
 		Last_Dir=direction;
+		Buzzer_Short(1);
 	}
 }
 
@@ -176,8 +191,11 @@ void Receive_Robot_Interactive(void)
 			if( (is_red_or_blue()==BLUE && Robot_Interactive.Receive_ID==107) ||
 					(is_red_or_blue()==RED  && Robot_Interactive.Receive_ID==7))
 			{
-				if(Inspect_Position==0)
+				if(Inspect_Position==0 && Robot_Interactive.Data[0]<=4)
+				{
 					Inspect_Position=Robot_Interactive.Data[0];
+					Buzzer_Short(1);
+				}
 			}
 		break;
 		

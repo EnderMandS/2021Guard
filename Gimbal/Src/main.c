@@ -42,7 +42,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-uint8_t Send_Position_Buf[12];
+uint8_t Send_Position_Buf[15]={0};
 uint8_t color=0;
 /* USER CODE END PTD */
 
@@ -116,7 +116,7 @@ int main(void)
 	Shoot_Speed_Pid_Init();
 	HAL_TIM_Base_Start_IT(&htim1);	//400Hz
 	Buzzer_Init();
-	HAL_TIM_Base_Start_IT(&htim4);	//1kHz
+	HAL_TIM_Base_Start_IT(&htim6);	//1kHz
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -140,11 +140,14 @@ int main(void)
 			}
 			
 			Send_Position_Buf[0] = 0x5A;
-			memcpy(Send_Position_Buf+1,send_pitch.c,4);
-			memcpy(Send_Position_Buf+5,send_yaw.c,4);
-			Send_Position_Buf[9]=(25.f-10)*10;	//shoot_velocity=(25-10)*10
-			Send_Position_Buf[10] = color;
-			Send_Position_Buf[11] = 0xA5;
+			memcpy(Send_Position_Buf+1,send_pitch.c,4);	//1-4 pitch
+			memcpy(Send_Position_Buf+5,send_yaw.c,4);		//5-8 yaw
+			Send_Position_Buf[9]=25;
+			Send_Position_Buf[10]=0;
+			Send_Position_Buf[11] = color;
+			Send_Position_Buf[12] = false;
+			Send_Position_Buf[13] = false;
+			Send_Position_Buf[14] = 0xA5;
 			Uart1_TransmissionT_Data(Send_Position_Buf,COUNTOF(Send_Position_Buf));
 			extern_view_send_state = 0;
 		}

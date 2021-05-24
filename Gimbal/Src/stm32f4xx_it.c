@@ -79,7 +79,7 @@ uint8_t TIM1_Div=0;
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-int Firc_Speed=-6000;	
+int Firc_Speed=-2000;		//6100
 /*
 	3000 10m/s
 	
@@ -318,6 +318,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				gear_motor_data[Fric_2].real_current!=0		&&
 				Hi229_Update!=0	)
 				Motor_Power_Up=1;
+		else
+			Buzzer_ms(1,50,2000);
 	}
 	else	//working
 	{
@@ -356,7 +358,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						remote_control.switch_left=3;
 					if(remote_control.switch_left==3 && Outpost_Alive==false)	//Outpost not alive, open chassis
 						remote_control.switch_left=1;
-					if(remote_control.switch_left==3 && Game_Start==false)	//Match end, back to middle
+					if(remote_control.switch_left==3 && Game_Start==false)	//Match end, back to railway middle
 						remote_control.switch_left=2;
 				#else		//Match start open friction,chassis.	Remote priority higher than auto
 					if(remote_control.switch_left==2 && Game_Start==true)
@@ -397,7 +399,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				Gimbal_Remote_Control();
 				if(sotf_start==0)		//wait for gimbal soft start
 				{
-					switch(remote_control.switch_left)	//left switch
+					switch(remote_control.switch_left)
 					{
 						case 1:	//Friction + flick + chassis
 						{
@@ -443,10 +445,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						Motor_Output_State[Gimbal_Y]=1;
 						if( Gimbal_Keep_Middle()==true )
 							Chassic_State=2;	//Get railway lenth
-					break;
-					
-					case 3:
-//						Shoot_Ctrl=2;	//flick fast
 					break;
 					
 					default:
@@ -543,7 +541,7 @@ void TIM6_DAC_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM6_DAC_IRQn 0 */
 	static uint32_t TIM6_cnt=0;
-	++TIM6_cnt;
+
   /* USER CODE END TIM6_DAC_IRQn 0 */
   HAL_TIM_IRQHandler(&htim6);
   /* USER CODE BEGIN TIM6_DAC_IRQn 1 */
@@ -551,6 +549,7 @@ void TIM6_DAC_IRQHandler(void)
 		Buzzer_Busy=true;
 	if(Buzzer_Busy==true)
 	{
+		++TIM6_cnt;
 		if(TIM6_cnt<Buzzer_On_Time)
 		{
 			if(Buzzer_Working==false)

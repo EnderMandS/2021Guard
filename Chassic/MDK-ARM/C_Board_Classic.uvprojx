@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F407xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;..\Core\Src;..\User_Code\h</IncludePath>
+              <IncludePath>../Core/Inc; ../Drivers/STM32F4xx_HAL_Driver/Inc; ../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy; ../Drivers/CMSIS/Device/ST/STM32F4xx/Include; ../Drivers/CMSIS/Include; ..\Core\Src; ..\User_Code\h</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -581,6 +581,11 @@
               <FileName>shoot.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User_Code\c\shoot.c</FilePath>
+            </File>
+            <File>
+              <FileName>buzzer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User_Code\c\buzzer.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -21,7 +21,7 @@ typedef enum
 {
 	Chassic_Left_3508_ID = 0x201,
 	Chassic_Right_3508_ID = 0x202,
-	Cartridge_2006_ID = 0x205,
+	Cartridge_2006_ID = 0x203,
 }CAN_Message_ID;
 typedef enum
 {

@@ -34,6 +34,7 @@
 #include "bsp_usart.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "buzzer.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -101,15 +102,18 @@ int main(void)
   MX_TIM1_Init();
   MX_USART6_UART_Init();
   MX_TIM2_Init();
+  MX_TIM4_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 	srand(0xAA);
 	Bsp_UART_Receive_IT(&huart6,Judgement_Buf,JUDGEMENT_BUF_LEN);
 	CAN_Filter_Init();
 	Chassis_init();
 	gear_moto_position_pid_init();
-  Rand_Speed_Up_Init();   //初始化随机加速时间
-	HAL_TIM_Base_Start_IT(&htim1);
-//	HAL_TIM_Base_Start_IT(&htim2);
+  Rand_Speed_Up_Init();   //Init random speed up time
+	HAL_TIM_Base_Start_IT(&htim1);	// 400Hz
+	Buzzer_Init();
+	HAL_TIM_Base_Start_IT(&htim6);	// 1kHz
   /* USER CODE END 2 */
 
   /* Infinite loop */

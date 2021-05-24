@@ -43,6 +43,7 @@ ext_bullet_remaining_t				BulletRemaining;			//0x0208
 ext_rfid_status_t					RfridStatus;				//0x0209
 ext_dart_client_cmd_t				DartClientCmd;				//0x020A
 ext_robot_interactive_t			Robot_Interactive;		//0x0301
+ext_robot_command_t					Robot_Command;				//0x0303
 
 xFrameHeader             			FrameHeader;		//发送帧头信息
 /****************************************************/
@@ -176,10 +177,13 @@ bool Judge_Read_Data(uint8_t *ReadFromUsart)
 					case ID_shoot_data:      			//0x0207//实时射击数据
 						memcpy(&ShootData, (ReadFromUsart + DATA), LEN_shoot_data);
 						Shoot_Update=true;
+						#warning	//Debug用，上场注释
+						if(Shoot_cnt>499)
+							Shoot_cnt=0;
 						Shoot_Speed[Shoot_cnt++]=ShootData.bullet_speed;
 						for(uint32_t i=0; i<Shoot_cnt; ++i)
 							Shoot_Speed_Aver+=Shoot_Speed[i];
-						Shoot_Speed_Aver/=Shoot_cnt;		//Debug用，上场注释
+						Shoot_Speed_Aver/=Shoot_cnt;
 						if(Max_Shoot_Speed<ShootData.bullet_speed)
 							Max_Shoot_Speed=ShootData.bullet_speed;
 					break;
@@ -200,6 +204,13 @@ bool Judge_Read_Data(uint8_t *ReadFromUsart)
 						memcpy(&Robot_Interactive,(ReadFromUsart + DATA),ReadFromUsart[DATA_LENGTH]);
 						Receive_Robot_Interactive();
 					break;
+					
+					case ID_robot_command:	//客户端下发信息
+						memcpy(&Robot_Command,(ReadFromUsart + DATA),LEN_robot_command);
+					break;
+					
+					default:
+						break;
 				}
 			}
 		}

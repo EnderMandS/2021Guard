@@ -1021,7 +1021,8 @@ typedef enum
 	ID_bullet_surplus							= 0x0208,//弹丸剩余发射数
 	ID_robot_rfid_state						= 0x0209,//机器人RFID状态
 	ID_darts_user_based_order			= 0x020A,//飞镖客户端指令
-	ID_robot_interactive					= 0x0301 //机器人间交互数据
+	ID_robot_interactive					= 0x0301,//机器人间交互数据
+	ID_robot_command							= 0x0303 //客户端下发信息
 } CmdID;
 
 //命令码数据段长,根据官方协议来定义长度
@@ -1046,7 +1047,8 @@ typedef enum
 	LEN_bullet_surplus						=  6,	//0x0208
 	LEN_robot_rfid_state					=  4, //0x0209
 	LEN_darts_user_based_order		= 12, //0x020A
-	LEN_robot_interactive					=  7	//0x0301  
+	LEN_robot_interactive					=  7,	//0x0301  
+	LEN_robot_command							= 15	//0x0303
 } JudgeDataLength;
 
 /* 自定义帧头 */
@@ -1263,6 +1265,16 @@ typedef __packed struct
 	uint8_t Data[113];
 } ext_robot_interactive_t;
 
+//小地图下发信息标识：0x0303。发送频率：触发时发送
+typedef __packed struct
+{
+	float target_position_x;
+	float target_position_y;
+	float target_position_z;
+	uint8_t commd_keyboard;
+	uint16_t target_robot_ID;
+}ext_robot_command_t;
+
 /*****************系统数据定义**********************/
 extern	ext_game_status_t       			GameState;					//0x0001
 extern	ext_game_result_t            		GameResult;					//0x0002
@@ -1284,11 +1296,13 @@ extern	ext_bullet_remaining_t				BulletRemaining;			//0x0208
 extern	ext_rfid_status_t					RfridStatus;				//0x0209
 extern	ext_dart_client_cmd_t				DartClientCmd;				//0x020A
 extern	ext_robot_interactive_t			Robot_Interactive;		//0x0301
+extern	ext_robot_command_t					Robot_Command;				//0x0303
 extern	xFrameHeader             			FrameHeader;		//发送帧头信息
 
 extern bool Hurt_Data_Update;
 extern bool Power_Heat_Data_Updata;
 extern bool Shoot_Update;
+extern uint32_t Shoot_cnt;
 
 #define BLUE  0
 #define RED   1

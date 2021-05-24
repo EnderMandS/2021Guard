@@ -17,7 +17,7 @@ extern float eular[3]; //欧拉角 eular[0]==Pitch eular[1]==Roll eular[2]==Yaw
 extern int16_t gyo[3];
 extern uint8_t Groy_Data_Buf[];
 extern uint8_t Judgement_Buf[];
-extern uint8_t View_Buf[];
+extern uint8_t View_Buf[VIEW_BUF_LEN];
 extern uint8_t UART_Buffer[36];
 extern uint8_t view_shoot_mode ;
 extern uint8_t view_send_state;

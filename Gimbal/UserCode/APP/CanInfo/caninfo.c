@@ -3,6 +3,7 @@
 #include "can.h"
 #include <string.h>
 #include "Gimbal.h"
+#include "buzzer.h"
 
 gear_moto_measure_t gear_motor_data[12];
 int16_t Motor_Output[12]={0};
@@ -124,10 +125,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 					Base_Shield=rx_data[5];
 					Shootable=rx_data[6];
 
-					if(rx_data[7]!=0 && Gimbal_Inspect_Busy==false)
+					if(rx_data[7]>=1 && rx_data[7]<=4 && Gimbal_Inspect_Busy==false)
 					{
 						Gimbal_Inspect_Busy=true;
 						Inspect_Position=rx_data[7];
+						Buzzer_Short(1);
 					}
 
 					Limit_Yaw=Base_Shield;	//没有基地护盾不限制Yaw

@@ -5,13 +5,14 @@
 #include "pid.h"
 #include <math.h>
 #include "usartinfo.h"
+#include "buzzer.h"
 
 #define Inspect_Empty 1
-float Pitch_Inspect_Speed = 0.1f;	//0.08
-float Yaw_Inspect_Speed = 0.18f;	//it will be changed in function Gimbal_Inspect_setSpeed
+float Pitch_Inspect_Speed = 0.2f;	//0.08
+float Yaw_Inspect_Speed = 0.15f;	//it will be changed in function Gimbal_Inspect_setSpeed
 #define Yaw_Inspect_Speed_Offset 0.025f
 
-bool Limit_Yaw=true;
+bool Limit_Yaw=false;
 bool Pitch_USE_Gyro=false;		//陀螺仪太抖、弃用，仅保留代码
 //#define Zero_Sample_Once		//零点采样，注释掉采样四次
 
@@ -33,6 +34,7 @@ float Yaw_Soft_Start_Speed_Ratio=1.f;
 
 float Pitch_Limit_Top = 121.52448f; //2788	121.52448f
 float Pitch_Limit_Bottom = 75.f;	//61.53f	75.85f
+float Pitch_Middle=98.f;
 
 int32_t pitch, yaw;
 float yaw_angle;
@@ -107,56 +109,53 @@ void Gimbal_Sotf_Start(void)
 			yaw_angle = Yaw_Motor_Angle_Change();
 			read_allow = 1;
 		}
-		if (Set_Zero == 0)
+		if(Pitch_USE_Gyro==true)
 		{
-			if(Pitch_USE_Gyro==true)
+			if (pitch_angle < Pitch_Gyro_Top)
 			{
-				if (pitch_angle < Pitch_Gyro_Top)
-				{
-					pitch_angle += 0.05f;
-				}
-				else if (pitch_angle > Pitch_Gyro_Top)
-				{
-					pitch_angle -= 0.05f;
-				}
+				pitch_angle += 0.05f;
+			}
+			else if (pitch_angle > Pitch_Gyro_Top)
+			{
+				pitch_angle -= 0.05f;
+			}
+		}
+		else
+		{
+			if(Set_State>3)
+			{
+				if (pitch_angle < Pitch_Middle)
+					pitch_angle += 0.075f;
+				else if (pitch_angle > Pitch_Middle)
+					pitch_angle -= 0.075f;
 			}
 			else
 			{
 				if (pitch_angle < Pitch_Limit_Top)
-				{
-					pitch_angle += 0.05f;
-				}
+					pitch_angle += 0.075f;
 				else if (pitch_angle > Pitch_Limit_Top)
-				{
-					pitch_angle -= 0.05f;
-				}
+					pitch_angle -= 0.075f;
 			}
-			
-			float dif=yaw_center-yaw_angle;
-			int Direction=0;
-			if(dif<=-180)
-				Direction=1;
-			else if(dif>-180 && dif <=0)
-				Direction=-1;
-			else if(dif>0 && dif<=180)
-				Direction=1;
-			else if(dif>180)
-				Direction=-1;
-			
-			yaw_angle += 0.05f*Yaw_Soft_Start_Speed_Ratio*Direction;
-			
-//			if (yaw_angle < yaw_center)
-//			{
-//				yaw_angle += 0.05f*Yaw_Soft_Start_Speed_Ratio;
-//			}
-//			else if (yaw_angle > yaw_center)
-//			{
-//				yaw_angle -= 0.05f*Yaw_Soft_Start_Speed_Ratio;
-//			}
 		}
+		
+		float dif=yaw_center-yaw_angle;
+		int Direction=0;
+		if(dif<=-180)
+			Direction=1;
+		else if(dif>-180 && dif <=0)
+			Direction=-1;
+		else if(dif>0 && dif<=180)
+			Direction=1;
+		else if(dif>180)
+			Direction=-1;
+		yaw_angle += 0.075f*Yaw_Soft_Start_Speed_Ratio*Direction;
+		
+		float Soft_Start_Angle_Pitch=pitch_angle;
+		float Soft_Start_Angle_Yaw=yaw_angle;
+		
 		if(Pitch_USE_Gyro==true)
 		{
-			if ((pitch_angle < Pitch_Gyro_Top + 0.5f && pitch_angle > Pitch_Gyro_Top - 0.5f)&&(yaw_angle < yaw_center + 0.5f && yaw_angle > yaw_center - 0.5f))
+			if ((Soft_Start_Angle_Pitch < Pitch_Gyro_Top + Soft_Start_Up_Error && Soft_Start_Angle_Pitch > Pitch_Gyro_Top - Soft_Start_Up_Error)&&(yaw_nowangle < yaw_angle + Soft_Start_Up_Error && yaw_nowangle > yaw_angle - Soft_Start_Up_Error))
 			{
 				control_allow = 1;
 				sotf_start = 0;
@@ -164,11 +163,15 @@ void Gimbal_Sotf_Start(void)
 		}
 		else
 		{
-			if((pitch_angle < Pitch_Limit_Top + 0.2f && pitch_angle > Pitch_Limit_Top - 0.2f)&&(yaw_angle < yaw_center + 0.5f && yaw_angle > yaw_center - 0.5f))
+			if(((Soft_Start_Angle_Pitch<(Pitch_Limit_Top+Soft_Start_Up_Error) && Soft_Start_Angle_Pitch>(Pitch_Limit_Top-Soft_Start_Up_Error)) && (Soft_Start_Angle_Yaw<yaw_center+Soft_Start_Up_Error && Soft_Start_Angle_Yaw>yaw_center-Soft_Start_Up_Error)) ||
+				 (((Soft_Start_Angle_Pitch<(Pitch_Middle+Soft_Start_Up_Error) && Soft_Start_Angle_Pitch>(Pitch_Middle-Soft_Start_Up_Error)) && (Soft_Start_Angle_Yaw<(yaw_center+Soft_Start_Up_Error) && Soft_Start_Angle_Yaw>(yaw_center-Soft_Start_Up_Error))) && (Set_State>=4)))
 			{
 				if(Set_Zero_Complete == false)
 				{
-					++Set_Zero;
+					if(Set_State==4)
+						Set_Zero=501;
+					else
+						++Set_Zero;
 					if(Set_Zero > 500)
 					{
 						if(Set_Pitch_Zero_Point() == true)
@@ -188,6 +191,7 @@ void Gimbal_Sotf_Start(void)
 									yaw_center=301.5f;
 								else if(Set_State==5)
 								{
+									Buzzer_Short(2);
 									Yaw_Soft_Start_Speed_Ratio=1;
 									Set_Zero_Complete = true;
 									control_allow = 1;
@@ -199,6 +203,7 @@ void Gimbal_Sotf_Start(void)
 				}
 				else
 				{
+					Buzzer_Short(2);
 					control_allow = 1;
 					sotf_start = 0;
 				}
@@ -241,7 +246,7 @@ void Gimbal_Remote_Control(void)
 		yaw_angle += 0.001f * first_order_filter_X_cali(remote_control.ch3);
 	}
 	yaw_angle = loop_fp32_constrain(yaw_angle, 0, 360);
-	if(Limit_Yaw==true)
+	if(Limit_Yaw==true && Set_Zero_Complete==true)
 	{
 		float Dead_Zone_Middle=(Yaw_Limit_Min+Yaw_Limit_Max)/2.f;
 		if( yaw_angle>Yaw_Limit_Max && yaw_angle<=Dead_Zone_Middle )
@@ -863,6 +868,8 @@ float Pitch_Gyro_Min = 361;
 bool Set_Pitch_Zero_Point(void) //采样取平均确定Pitch零点
 {
 	static uint32_t Time_Div=0;
+	if(Set_State>3)		//Sample complete, return true
+		return true;
 	if(++Time_Div%2==0)		//二分频	200Hz
 	{
 		if (Hi229_Update == 1)
@@ -898,15 +905,13 @@ bool Set_Pitch_Zero_Point(void) //采样取平均确定Pitch零点
 				Motor_Average/=(Sampling_Times*1.f);
 				Zero_Offset[Set_State]=-(Gyro_Average+Motor_Average*Motor_Ecd_to_Ang-Pitch_Limit_Top);
 				
-				if(Limit_Yaw==false)
-				{
-					Pitch_Gyro_Max = -1;
-					Pitch_Gyro_Min = 361;
-					Gyro_Average=Motor_Average=0;
-					for(cnt=0; cnt<Sampling_Times; ++cnt)
-						Pitch_Gyro_Buf[cnt]=Pitch_Motor_Buf[cnt]=0;
-				}
+				Pitch_Gyro_Max = -1;
+				Pitch_Gyro_Min = 361;
+				Gyro_Average=Motor_Average=0;
+				for(cnt=0; cnt<Sampling_Times; ++cnt)
+					Pitch_Gyro_Buf[cnt]=Pitch_Motor_Buf[cnt]=0;
 
+				Buzzer_Short(1);
 				return true;
 			}
 		}

@@ -40,24 +40,25 @@ void Chassis_init(void)
 
 float Slow_Change_Speed(int dir, uint16_t Speed)
 {
-	switch(Speed)
-	{
-		case Classic_Slow:
-			Buff_Time=400;
-		break;
-		
-		case Classic_Middle:
-			Buff_Time=200;
-		break;
-		
-		case Classic_Fast:
-			Buff_Time=150;
-		break;
-		
-		default:
-			Buff_Time=150;
-		break;
-	}
+//	switch(Speed)
+//	{
+//		case Classic_Slow:
+//			Buff_Time=400;
+//		break;
+//		
+//		case Classic_Middle:
+//			Buff_Time=200;
+//		break;
+//		
+//		case Classic_Fast:
+//			Buff_Time=150;
+//		break;
+//		
+//		default:
+//			Buff_Time=150;
+//		break;
+//	}
+	Buff_Time=100;
 	if(dir!=Last_Dir)
 	{
 		++Time_Cnt;
@@ -77,22 +78,12 @@ float Slow_Change_Speed(int dir, uint16_t Speed)
 	return dir*Speed;
 }
 
-#define Wait_Cnt 50		//检测到电机反转之后等待时间 实际时间=Wait_Cnt/400Hz
+#define Wait_Cnt 400		//检测到电机反转之后等待时间 实际时间=Wait_Cnt/400Hz
 bool Dir_Change_Wait=false;
-uint8_t Dir_Change_Wait_Cnt=0;
+int16_t Max_Speed=0;
+uint32_t Dir_Change_Wait_Cnt=0;
 void Spring(int dir,uint16_t Speed)
 {
-//	if(Speed==Chassic_Spring_Slow)	//瞄准到不反弹
-//	{
-//		motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(dir,Speed);
-//		for (uint8_t i=0; i<2; i++)
-//		{
-//			motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
-//			Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
-//		}
-//		return;
-//	}
-//	else if(dir!=Last_Dir)
 	if(dir!=Last_Dir)
 	{
 		if(Last_Dir==1)
@@ -138,6 +129,13 @@ void Spring(int dir,uint16_t Speed)
 		{
 			++Dir_Change_Wait_Cnt;
 			if(Dir_Change_Wait_Cnt>=Wait_Cnt)
+			{
+				Dir_Change_Wait_Cnt=0;
+				Dir_Change_Wait=false;
+			}
+			if( abs(gear_motor_data[Moto_ID[0]].speed_rpm) > abs(Max_Speed) )
+				Max_Speed=gear_motor_data[Moto_ID[0]].speed_rpm;
+			else if( abs(gear_motor_data[Moto_ID[0]].speed_rpm) < abs(Max_Speed)-500 )
 			{
 				Dir_Change_Wait_Cnt=0;
 				Dir_Change_Wait=false;

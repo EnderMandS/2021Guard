@@ -11,11 +11,12 @@
 #include "Remote_control.h"
 #include "judge.h"
 #include "Gimbal.h"
-//#include "gimbal.h"
+#include "buzzer.h"
+
 uint8_t view_send_state;
 uint8_t Judgement_Buf[JUDGEMENT_BUF_LEN];
 uint8_t View_Buf[VIEW_BUF_LEN];
-uint8_t rx_view_buf[24];
+uint8_t rx_view_buf[VIEW_BUF_LEN];
 uint8_t rxbuf[200];
 uint8_t Groy_Data_Buf[GROY_DATA_BUF_LEN];
 uint8_t UART_Buffer[36];
@@ -47,40 +48,52 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 	}
 	else if (huart == &huart1)
 	{
+		/*	[0] Head 0xAF
+		 *	[1] Control command
+		 *	[2] Shoot Mode
+		 *	[3]-[6] pitch
+		 *	[7]-[10] yaw
+		 *	[11] Air resistance
+		 *	[12] Tail 0xFA
+		*/
 		memcpy(&rx_view_buf, View_Buf, 100); //数据长度rx_view_buf
-		if (rx_view_buf[0] == 0xAF && rx_view_buf[11] == 0xFA)	//标识符
+		if (rx_view_buf[0] == 0xAF && rx_view_buf[12] == 0xFA)	//标识符
 		{
 			switch (rx_view_buf[1]) //命令位
 			{
-			case 0xAA:
-				view_send_state = 1;
-				Aimming = 0;
+				case 0xAA:
+					view_send_state = 1;
+					Aimming = 0;
+					
+					if(Slow_Inspect_Speed==0)
+					{
+						Gimbal_Inspect_setSpeed(Gimbal_Inspect_SPEED_FAST);
+					}
+					else
+						--Slow_Inspect_Speed;
+					break;
+					
+				case 0xDD:
+					view_send_state = 1;
+					Aimming = 0;
+					Slow_Inspect_Speed=25;
+					Gimbal_Inspect_setSpeed(Gimbal_Inspect_SPEED_SLOW);
+					break;
 				
-				if(Slow_Inspect_Speed==0)
-				{
-					Gimbal_Inspect_setSpeed(Gimbal_Inspect_SPEED_FAST);
-				}
-				else
-					--Slow_Inspect_Speed;
-				break;
-			case 0xDD:
-				view_send_state = 1;
-				Aimming = 0;
-				Slow_Inspect_Speed=25;
-				Gimbal_Inspect_setSpeed(Gimbal_Inspect_SPEED_SLOW);
-				break;
-			case 0xBB:
-				view_send_state = 2;
-				extern_view_send_state = 1;
-				break;
-			case 0xCC:
-				view_send_state = 3;
-				Aimming = 1;
-				Slow_Inspect_Speed=25;
-				view_shoot_mode = rx_view_buf[2]; //射击指令
-				break;
-			default:
-				break;
+				case 0xBB:
+					view_send_state = 2;
+					extern_view_send_state = 1;
+					break;
+				
+				case 0xCC:
+					view_send_state = 3;
+					Aimming = 1;
+					Slow_Inspect_Speed=25;
+					view_shoot_mode = rx_view_buf[2]; //射击指令
+					break;
+				
+				default:
+					break;
 			}
 
 			if(remote_control.switch_right==1 && view_send_state==3 )

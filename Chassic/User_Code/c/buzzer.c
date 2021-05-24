@@ -1,7 +1,7 @@
 #include "buzzer.h"
 #include "tim.h"
 
-uint16_t PSC=5;		//0-1000
+uint16_t PSC=7;		//0-1000
 uint16_t PWM=10000;	//10000-20000
 
 uint32_t Buzzer_cnt=0;
