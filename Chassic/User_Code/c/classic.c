@@ -8,7 +8,7 @@
 int Buff_Time=200;
 
 uint16_t Time_Cnt=0;
-int Last_Dir=0;
+int Last_Dir=1;
 
 float set_spd[2];
 PID_TypeDef motor_pid[2];
@@ -135,7 +135,7 @@ void Spring(int dir,uint16_t Speed)
 			}
 			if( abs(gear_motor_data[Moto_ID[0]].speed_rpm) > abs(Max_Speed) )
 				Max_Speed=gear_motor_data[Moto_ID[0]].speed_rpm;
-			else if( abs(gear_motor_data[Moto_ID[0]].speed_rpm) < abs(Max_Speed)-500 )
+			else if( abs(gear_motor_data[Moto_ID[0]].speed_rpm) < abs(Max_Speed)-200 )
 			{
 				Dir_Change_Wait_Cnt=0;
 				Dir_Change_Wait=false;
@@ -153,9 +153,7 @@ void Spring(int dir,uint16_t Speed)
 	}
 }
 
-
 #define Sample_Times 6
-
 uint8_t Measuer_State=Ready_Measure;
 uint32_t Rail_Len=0;
 uint32_t Rail_Len_Buff[Sample_Times]={0};
@@ -177,7 +175,7 @@ void Measuer_Rail_Len(void)
 			else
 			{
 				uint32_t sum=0;
-				for(uint8_t i=0; i<Sample_Times; ++i)
+				for(uint8_t i=1; i<Sample_Times; ++i)
 					sum += Rail_Len_Buff[i];
 				Rail_Len = sum/Sample_Times;
 				Measuer_State=End_Measure;
@@ -189,6 +187,7 @@ void Measuer_Rail_Len(void)
 		if(Measuer_State==Ready_Measure)
 		{
 			gear_motor_data[Moto_ID[0]].round_cnt=0;
+			gear_motor_data[Moto_ID[1]].round_cnt=0;
 			Measuer_State=Measuring;
 		}
 	}

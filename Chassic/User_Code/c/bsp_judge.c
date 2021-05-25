@@ -57,19 +57,19 @@ void Check_Being_Hit(void)	//受到伤害加速
 			}
 		}
 	#else
-		if(PowerHeatData.chassis_power_buffer>190 && Changing_Speed_Flag==0 && Hurt_Data_Update==false)		//随机加速
-		{
-			--Rand_Speed_Up_Time;
-			if(Rand_Speed_Up_Time==0)
-				Hurt_Data_Update=true;
-		}
+//		if(PowerHeatData.chassis_power_buffer>190 && Changing_Speed_Flag==0 && Hurt_Data_Update==false)		//随机加速
+//		{
+//			--Rand_Speed_Up_Time;
+//			if(Rand_Speed_Up_Time==0)
+//				Hurt_Data_Update=true;
+//		}
 
 		if(Hurt_Data_Update==true)
 		{
 			if(Being_Hit==0)
 			{
 				Being_Hit=1;
-				SpeedUp_Time=(rand()%3+1)*200;
+				SpeedUp_Time=(rand()%2+2)*200;
 				if(PowerHeatData.chassis_power_buffer>75)
 				{
 					if(Classic_Move_Speed==Chassic_Spring_Middle)
@@ -101,7 +101,7 @@ void Rand_Dir_Change(void)
 	if(	PowerHeatData.chassis_power_buffer>150 &&	//缓冲能量判断
 			Changing_Speed_Flag==0 &&		//边缘判断
 			Classic_Move_Speed==Chassic_Spring_Middle &&	//被击打加速判断
-			rand()%5==0)	//20%概率
+			rand()%4==0)	//25%概率
 	{
 		direction=-direction;
 		Last_Dir=direction;

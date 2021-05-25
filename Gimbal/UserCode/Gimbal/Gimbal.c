@@ -215,13 +215,13 @@ void Gimbal_Sotf_Start(void)
 bool Gimbal_Keep_Middle(void)
 {
 	static bool Return_State=false;	//防止因为云台抖动停止读取轨道长度
-	if(yaw_angle < yaw_center + 0.5f && yaw_angle > yaw_center - 0.5f)
+	if(yaw_nowangle < yaw_center + 0.5f && yaw_nowangle > yaw_center - 0.5f)
 		Return_State=true;
 	else
 	{
-		if(yaw_angle<Yaw_Limit_Min)
+		if(yaw_nowangle<Yaw_Limit_Min)
 			Return_State=false;
-		float dif=yaw_center-yaw_angle;
+		float dif=yaw_center-yaw_nowangle;
 		int Direction=0;
 		if(dif<=-180)
 			Direction=1;

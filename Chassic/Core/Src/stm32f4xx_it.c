@@ -60,6 +60,8 @@ uint8_t Motor_Power_Up=0;	//判断电机上电，1上电完成
 uint8_t Shoot_Ultra_Mode=0;	//剩余热量多，高射速消耗热量，1有效
 int Heat_Rest=0;
 float Rail_Position=0.f;
+uint8_t L_=0;
+uint8_t R_=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -285,13 +287,16 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			Switch_State[0]=Switch_State[1]=1;
 		}
 		
+		L_=HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin);
+		R_=HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin);
+		
 		if(Changing_Speed_Flag==0)	//速度反向时不检测光电开关
 		{
 			if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_RESET)	//左边检测到墙壁，开始反转
 			{
 				eliminate_dithering_right = 0;
 				eliminate_dithering_left++;
-				if (eliminate_dithering_left == 20) //消抖
+				if (eliminate_dithering_left >= 20) //消抖
 				{
 					direction = touch_Left;
 					Changing_Speed_Flag=1;	//方向改变，标志位置1
@@ -302,7 +307,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			{
 				eliminate_dithering_right++;
 				eliminate_dithering_left = 0;
-				if (eliminate_dithering_right == 20)
+				if (eliminate_dithering_right >= 20)
 				{
 					direction = touch_Right;
 					Changing_Speed_Flag=1;	//方向改变，标志位置1
@@ -318,6 +323,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 					if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_SET)
 					{
 							Changing_Speed_Flag=0;
+							if(Move_Allow==1)
+								gear_motor_data[Moto_ID[0]].round_cnt=0;
 					}
 				}
 				else if(direction==touch_Right)
@@ -325,34 +332,15 @@ void TIM1_UP_TIM10_IRQHandler(void)
 					if(HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_SET)
 					{
 							Changing_Speed_Flag=0;
+							if(Move_Allow==1)
+								gear_motor_data[Moto_ID[0]].round_cnt=0;
 					}
 				}
 			}
 		#endif
 		
-		Check_Being_Hit();	//被击打改变速度
-		
-		if(Measuer_State==End_Measure)	//已获得轨道长度
-		{
-			Rail_Position=(abs(gear_motor_data[Moto_ID[0]].round_cnt)*1.f)/(Rail_Len*1.f);	//轨道位置0-1
-			if(Aim==false)	//没有瞄准到目标：随机变向
-			{
-				float range=0.025f;	//相对于变向点的变向范围
-				float point_1=0.33f;	//变向点1
-				float point_2=0.66f;	//变向点2
-				if(	(Rail_Position>point_1-range && Rail_Position<point_1+range)	||
-						(Rail_Position>point_2-range && Rail_Position<point_2+range)	)	//是否在变向点
-				{
-					if(Rand_Change_Flag==false)	//是否已执行变向函数
-					{
-						Rand_Change_Flag=true;
-						Rand_Dir_Change();
-					}
-				}
-				else
-					Rand_Change_Flag=false;
-			}
-		}
+		if(Measuer_State==End_Measure)
+			Rail_Position=(abs((gear_motor_data[Moto_ID[0]].round_cnt))*1.f)/(Rail_Len*1.f);	//轨道位置0-1
 		
 		switch (Move_Allow)
 		{
@@ -366,6 +354,27 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
 					}
 				#else
+					Check_Being_Hit();	//被击打改变速度
+					if(Measuer_State==End_Measure)	//已获得轨道长度
+					{
+						if(Aim==false)	//没有瞄准到目标：随机变向
+						{
+							float range=0.025f;	//相对于变向点的变向范围
+							float point_1=0.33f;	//变向点1
+							float point_2=0.66f;	//变向点2
+							if(	(Rail_Position>point_1-range && Rail_Position<point_1+range)	||
+									(Rail_Position>point_2-range && Rail_Position<point_2+range)	)	//是否在变向点
+							{
+								if(Rand_Change_Flag==false)	//是否已执行变向函数
+								{
+									Rand_Change_Flag=true;
+									Rand_Dir_Change();
+								}
+							}
+							else
+								Rand_Change_Flag=false;
+						}
+					}
 					Spring(direction,Classic_Move_Speed);
 				#endif
 				break;
@@ -516,11 +525,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			Cartridge_wheel_PID_Calc(0);
 			Motor_Output[Cartridge]=0;
 		}
-//		if(gear_motor_data[Cartridge].temperate>90)		//Cartridge temperate protect
-//		{
-//			Motor_Output[Cartridge]=0;
-//			Buzzer_Short(3);
-//		}
 		
 		if(TIM1_cnt%2==0)		//2 freq div
 		{
