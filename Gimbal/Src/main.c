@@ -131,7 +131,7 @@ int main(void)
 			if(Pitch_USE_Gyro==true)
 				send_pitch.f = eular[0];
 			else
-				send_pitch.f = pit_nowangle;
+				send_pitch.f = pit_nowangle-Pitch_Motor_Zero;
 			
 			if (yaw_nowangle > 180) {
 				send_yaw.f = -(360 - yaw_nowangle);

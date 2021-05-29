@@ -5,15 +5,15 @@
 #include "pid.h"
 #include <stdbool.h>
 
-#define USE_SPRING		//非弹簧模式的功能已弃用，不能注释掉，留下只是为了保留代码
+#define USE_SPRING		//非弹簧模式
 #define RAND_DIR
 
-#define Classic_Slow		1500	//瞄准
-#define Classic_Middle	4500	//巡检
+#define Classic_Slow		2000	//瞄准
+#define Classic_Middle	4000	//巡检
 #define Classic_Fast		8000	//闪避
 
-#define Chassic_Spring_Slow		1500
-#define Chassic_Spring_Middle	4500
+#define Chassic_Spring_Slow		2000
+#define Chassic_Spring_Middle	4000
 #define Chassic_Spring_Fast		8000
 
 #define Motor_Base 0x201

@@ -10,8 +10,6 @@ int16_t Motor_Output[12]={0};
 uint8_t Motor_Output_State[12]={0};
 uint8_t Wait_For_Motor_Cnt[12]={0};
 uint8_t Wait_For_Motor_State=1;
-int Chassic_Dir=0;
-int Chassic_Last_Dir=0;
 bool Game_Start=false;
 bool Base_Shield=true;
 bool Outpost_Alive=true;
@@ -20,6 +18,7 @@ extern uint8_t color;
 uint32_t Can_Error=0;
 bool Shootable=true;
 uint8_t Inspect_Position=0;
+bool Hit_Gimbal=false;
 
 /**
  * @brief: 数据处理,将接收到数据传入指针并解算
@@ -117,24 +116,45 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 				break;
 			
 			case 0x1AA:
-					color=rx_data[0];
-					Chassic_Dir=rx_data[1];
-					Chassic_Last_Dir=rx_data[2];
-					Game_Start=rx_data[3];
-					Outpost_Alive=rx_data[4];
-					Base_Shield=rx_data[5];
-					Shootable=rx_data[6];
+				color=rx_data[0];
+				Hit_Gimbal=rx_data[1];
+				Game_Start=rx_data[2];
+				Outpost_Alive=rx_data[3];
+				Base_Shield=rx_data[4];
+				Shootable=rx_data[5];
 
-					if(rx_data[7]>=1 && rx_data[7]<=4 && Gimbal_Inspect_Busy==false)
-					{
-						Gimbal_Inspect_Busy=true;
-						Inspect_Position=rx_data[7];
-						Buzzer_Short(1);
-					}
-
-					Limit_Yaw=Base_Shield;	//没有基地护盾不限制Yaw
-				break;
-		default:
+				Limit_Yaw=Outpost_Alive;	//Outpost not alive, don't limit yaw
+			break;
+					
+			case 0x1BB:
+				/*	0 Normal
+				 *	1-4 Quadrant
+				 *	5 Front
+				 *	6 Back
+				*/
+				Inspect_Position=rx_data[0];
+				switch(Inspect_Position)
+				{
+					case 1:
+					case 2:
+					case 3:
+					case 4:
+						Position_Inspect_cnt=Position_Inspect_Time;
+					break;
+					
+					case 5:
+					case 6:
+						Position_Inspect_cnt=Front_Back_Time;
+					break;
+					
+					default:
+						Inspect_Position=Position_Inspect_cnt=0;
+					break;
+				}
+				Buzzer_Short(1);
+			break;
+			
+			default:
 				break;
 		}
 	}

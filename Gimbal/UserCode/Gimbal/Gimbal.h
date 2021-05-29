@@ -4,9 +4,13 @@
 #include "main.h"
 #include "stdbool.h"
 
+#define Pitch_Motor_Zero (121.52448f)
 #define Motor_Ecd_to_Ang 0.0439506775729459f // 360度/8191
 #define Soft_Start_Up_Error 0.5f
-#define pitch_center ((Pitch_Limit_Top+Pitch_Limit_Bottom)/2.f)
+#define pitch_center ((Pitch_Motor_Zero+Pitch_Limit_Bottom)/2.f)
+
+#define Position_Inspect_Time 5
+#define Front_Back_Time 2
 
 enum Gimbal_Inspect_SPEED
 {
@@ -24,7 +28,7 @@ extern float yaw_nowangle;
 extern float pit_nowangle;
 extern bool Pitch_USE_Gyro;
 extern bool Limit_Yaw;
-extern bool Gimbal_Inspect_Busy;
+extern uint8_t Position_Inspect_cnt;
 
 void Gimbal_Sotf_Start(void);
 void Gimbal_Remote_Control(void);
@@ -33,7 +37,6 @@ void Gimbal_Inspect(void);
 float Yaw_Motor_Angle_Change(void);
 float Limit_Zero_To_360(float Input);
 bool Set_Pitch_Zero_Point(void);
-void Avoid_Wall(void);
 bool Yaw_At_Border(void);
 float loop_fp32_constrain(float Input, float minValue, float maxValue);
 float Zero_Offset_Cal(void);

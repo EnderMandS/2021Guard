@@ -60,8 +60,10 @@ bool Power_Heat_Data_Updata=false;
 bool Shoot_Update=false;
 float Max_Shoot_Speed=0;
 float Max_Chassic_Power=0;
-float Shoot_Speed[500]={0};
-float Shoot_Speed_Aver=0;
+#ifdef Test_Mode
+	float Shoot_Speed[500]={0};
+	float Shoot_Speed_Aver=0;
+#endif
 uint32_t Shoot_cnt=0;
 
 /**
@@ -168,24 +170,37 @@ bool Judge_Read_Data(uint8_t *ReadFromUsart)
 					
 					case ID_robot_hurt:      			//0x0206 //伤害状态数据
 						memcpy(&RobotHurt, (ReadFromUsart + DATA), LEN_robot_hurt);
-						if(RobotHurt.hurt_type == 0)//非装甲板离线造成伤害
-						{	//装甲数据每更新一次则判定为受到一次伤害
+						if(RobotHurt.hurt_type == 0)//装甲伤害扣血
+						{
 							Hurt_Data_Update = true;
+							if(Gimbal_Position==0)
+							{
+								if(RobotHurt.armor_id==0)
+									Inspect_Position=5;
+								else if(RobotHurt.armor_id==1)
+									Inspect_Position=6;
+							}
 						}
 					break;
 					
 					case ID_shoot_data:      			//0x0207//实时射击数据
 						memcpy(&ShootData, (ReadFromUsart + DATA), LEN_shoot_data);
 						Shoot_Update=true;
-						#warning	//Debug用，上场注释
-						if(Shoot_cnt>499)
-							Shoot_cnt=0;
-						Shoot_Speed[Shoot_cnt++]=ShootData.bullet_speed;
-						for(uint32_t i=0; i<Shoot_cnt; ++i)
-							Shoot_Speed_Aver+=Shoot_Speed[i];
-						Shoot_Speed_Aver/=Shoot_cnt;
-						if(Max_Shoot_Speed<ShootData.bullet_speed)
-							Max_Shoot_Speed=ShootData.bullet_speed;
+						++Shoot_cnt;
+						#ifdef Test_Mode
+							if(Shoot_cnt>499)
+							{
+								Shoot_cnt=0;
+								memset(Shoot_Speed,0,500);
+								Shoot_Speed_Aver=0;
+							}
+							Shoot_Speed[Shoot_cnt-1]=ShootData.bullet_speed;
+							for(uint32_t i=0; i<Shoot_cnt; ++i)
+								Shoot_Speed_Aver+=Shoot_Speed[i];
+							Shoot_Speed_Aver/=Shoot_cnt;
+							if(Max_Shoot_Speed<ShootData.bullet_speed)
+								Max_Shoot_Speed=ShootData.bullet_speed;
+						#endif
 					break;
 
 					case ID_bullet_surplus:			//0x0208//弹丸剩余发射数

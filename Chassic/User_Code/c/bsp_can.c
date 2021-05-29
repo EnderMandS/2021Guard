@@ -3,6 +3,7 @@
 #include "classic.h"
 #include "shoot.h"
 #include "bullet.h"
+#include "judge.h"
 #include "bsp_judge.h"
 #include <string.h>
 
@@ -93,39 +94,34 @@ void Gimbal_Receive(uint8_t Receive_Data[8])
 	
 	Switch_State[1]=Receive_Data[2];
 	
-	if(No_Bullet==false)
+	switch(Receive_Data[3])	// 0:Inspect  1:Aim
 	{
-		switch(Receive_Data[3])	// 0:Inspect  1:Aim
-		{
-			#ifndef USE_SPRING		//无弹簧
-				case 0:
-					if(Classic_Move_Speed!=Classic_Fast)
-						Classic_Move_Speed=Classic_Middle;
-				break;
-				
-				case 1:
-					Classic_Move_Speed=Classic_Slow;
-				break;
-			#else		//弹簧
-				case 0:
-					Aim=false;
-					if(Classic_Move_Speed!=Chassic_Spring_Fast)
-						Classic_Move_Speed=Chassic_Spring_Middle;
-				break;
-					
-				case 1:
-					Aim=true;
-					Classic_Move_Speed=Chassic_Spring_Slow;
-				break;
-			#endif
+		case 0:
+			Aim=false;
+			if(Classic_Move_Speed!=Chassic_Spring_Fast)
+				Classic_Move_Speed=Chassic_Spring_Middle;
+		break;
 			
-			default:
-				break;
-		}
+		case 1:
+			if((is_red_or_blue()==BLUE && GameRobotHP.blue_7_robot_HP>100) ||
+					(is_red_or_blue()==RED && GameRobotHP.red_7_robot_HP>100))	//rest HP low, don't slow down
+			{
+				Aim=true;
+				Classic_Move_Speed=Chassic_Spring_Slow;
+			}
+			else
+			{
+				Aim=false;
+				if(Classic_Move_Speed!=Chassic_Spring_Fast)
+					Classic_Move_Speed=Chassic_Spring_Middle;
+			}
+		break;
+		
+		default:
+			break;
 	}
 	
-	if(Receive_Data[4]==false)		//Gimbal_Inspect_Busy
-		Inspect_Position=0;
+	Gimbal_Position=Receive_Data[4];
 }
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 {
@@ -171,7 +167,7 @@ void CAN_Motor_Ctrl(CAN_HandleTypeDef *hcan, int16_t Motor_Data[12])
 	uint32_t send_mail_box;
 	uint16_t Std_ID[3]={0x200,0x1FF,0x2FF};
 	
-	for(uint8_t i=0; i<2; ++i)	//没用到，改成2
+	for(uint8_t i=0; i<1; ++i)	//没用到，改成2
 	{
 		can_tx_message.StdId = Std_ID[i];
 		can_send_data[0] = Motor_Data[4*i] >> 8;

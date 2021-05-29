@@ -43,7 +43,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define touch_Left -1
+#define touch_Left (-1)
 #define touch_Right 1
 /* USER CODE END PD */
 
@@ -57,11 +57,10 @@
 int32_t Fric_Speed=-0;
 uint32_t Time_Tick=0;	//计时，一秒内没有收到云台数据停止动作
 uint8_t Motor_Power_Up=0;	//判断电机上电，1上电完成
-uint8_t Shoot_Ultra_Mode=0;	//剩余热量多，高射速消耗热量，1有效
+uint8_t Shoot_Ultra_Mode=1;	//剩余热量多，高射速消耗热量，1有效
 int Heat_Rest=0;
 float Rail_Position=0.f;
-uint8_t L_=0;
-uint8_t R_=0;
+bool Hit_Gimbal=false;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -270,25 +269,30 @@ void TIM1_UP_TIM10_IRQHandler(void)
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
 	if(Motor_Power_Up==0)
 	{
-//		if(	gear_motor_data[Chassic_L].real_current!=0 &&
-//				gear_motor_data[Chassic_R].real_current!=0 &&
-//				gear_motor_data[Cartridge].real_current!=0)
+		#ifndef Test_Mode
+			if(	gear_motor_data[Chassic_L].real_current!=0 &&
+					gear_motor_data[Chassic_R].real_current!=0 &&
+					gear_motor_data[Cartridge].real_current!=0)
+		#endif
 			Motor_Power_Up=1;
-//		else
-//			Buzzer_ms(1,50,2000);
+		#ifndef Test_Mode
+			else
+				Buzzer_ms(1,50,2000);
+		#endif
 	}
 	else
 	{
-//		Updata_Switch_State();
 		++Time_Tick;	//Time_Tick在CAN接收服务函数中置零
 		if(Time_Tick>200)	//没有云台数据，停止动作
 		{
-			Move_Allow=Shoot_State=0;
+			#ifdef Test_Mode
+				Move_Allow=0;
+			#else
+				Move_Allow=1;
+			#endif
+			Shoot_State=0;
 			Switch_State[0]=Switch_State[1]=1;
 		}
-		
-		L_=HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin);
-		R_=HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin);
 		
 		if(Changing_Speed_Flag==0)	//速度反向时不检测光电开关
 		{
@@ -298,7 +302,11 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				eliminate_dithering_left++;
 				if (eliminate_dithering_left >= 20) //消抖
 				{
-					direction = touch_Left;
+					#ifdef USE_SPRING
+						direction = touch_Left;
+					#else
+						direction = Last_Dir = touch_Left;
+					#endif
 					Changing_Speed_Flag=1;	//方向改变，标志位置1
 					Buzzer_Short(1);
 				}
@@ -309,74 +317,57 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				eliminate_dithering_left = 0;
 				if (eliminate_dithering_right >= 20)
 				{
-					direction = touch_Right;
+					#ifdef USE_SPRING
+						direction = touch_Right;
+					#else
+						direction = Last_Dir = touch_Right;
+					#endif
+					Hit_Gimbal=true;
 					Changing_Speed_Flag=1;	//方向改变，标志位置1
 					Buzzer_Short(1);
 				}
 			}
 		}
-		#ifdef USE_SPRING
-			else if(Changing_Speed_Flag==1)
+		else if(Changing_Speed_Flag==1)
+		{
+			if(direction==touch_Left)
 			{
-				if(direction==touch_Left)
+				if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_SET)
 				{
-					if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_SET)
-					{
-							Changing_Speed_Flag=0;
-							if(Move_Allow==1)
-								gear_motor_data[Moto_ID[0]].round_cnt=0;
-					}
-				}
-				else if(direction==touch_Right)
-				{
-					if(HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_SET)
-					{
-							Changing_Speed_Flag=0;
-							if(Move_Allow==1)
-								gear_motor_data[Moto_ID[0]].round_cnt=0;
-					}
+						Changing_Speed_Flag=0;
+						if(Move_Allow==1)
+							gear_motor_data[Moto_ID[0]].round_cnt=0;
 				}
 			}
-		#endif
-		
-		if(Measuer_State==End_Measure)
-			Rail_Position=(abs((gear_motor_data[Moto_ID[0]].round_cnt))*1.f)/(Rail_Len*1.f);	//轨道位置0-1
+			else if(direction==touch_Right)
+			{
+				if(HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_SET)
+				{
+						Changing_Speed_Flag=0;
+						Hit_Gimbal=false;
+						if(Move_Allow==1)
+							gear_motor_data[Moto_ID[0]].round_cnt=0;
+				}
+			}
+		}
+
+		Rail_Position=(abs(gear_motor_data[Moto_ID[0]].round_cnt)*1.f)/(Rail_Len*1.f);
 		
 		switch (Move_Allow)
 		{
 			case 1:	//正常移动
 			{
-				#ifndef USE_SPRING
-					motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed);
-					for (uint8_t i=0; i<2; i++)
-					{
-						motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm); //根据设定值进行PID计算。
-						Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
-					}
-				#else
+				#ifdef USE_SPRING
 					Check_Being_Hit();	//被击打改变速度
+				#endif
 					if(Measuer_State==End_Measure)	//已获得轨道长度
 					{
 						if(Aim==false)	//没有瞄准到目标：随机变向
 						{
-							float range=0.025f;	//相对于变向点的变向范围
-							float point_1=0.33f;	//变向点1
-							float point_2=0.66f;	//变向点2
-							if(	(Rail_Position>point_1-range && Rail_Position<point_1+range)	||
-									(Rail_Position>point_2-range && Rail_Position<point_2+range)	)	//是否在变向点
-							{
-								if(Rand_Change_Flag==false)	//是否已执行变向函数
-								{
-									Rand_Change_Flag=true;
-									Rand_Dir_Change();
-								}
-							}
-							else
-								Rand_Change_Flag=false;
+							Rand_Dir_Time();
 						}
 					}
 					Spring(direction,Classic_Move_Speed);
-				#endif
 				break;
 			}
 			
@@ -384,16 +375,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			{
 				if(Measuer_State!=End_Measure)
 				{
-					#ifndef USE_SPRING
-						motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,Classic_Move_Speed);
-						for (uint8_t i=0; i<2; i++)
-						{
-							motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm); //根据设定值进行PID计算。
-							Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;
-						}
-					#else
-						Spring(direction,Classic_Move_Speed);
-					#endif
+					Spring(direction,Classic_Move_Speed);
 					Measuer_Rail_Len();
 				}
 				else	//测量完之后回到轨道中间停下
@@ -434,7 +416,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			Shoot_Ultra_Mode=1;
 		else if(Heat_Rest<100)
 			Shoot_Ultra_Mode=0;
-		
 		
 		if(Shoot_State!=0)
 		{
@@ -479,17 +460,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						}
 					break;
 					
-					default:	//Load
-		//				if(Switch_State[1]==0)
-		//				{
-		//					Cartridge_wheel_PID_Calc(1000);
-		//					Motor_Output[Cartridge]=Cartridge_wheel.output;
-		//				}
-		//				else
-		//				{
-		//					Cartridge_wheel_PID_Calc(0);
-		//					Motor_Output[Cartridge]=0;
-		//				}
+					default:
 						Cartridge_wheel_PID_Calc(0);
 						Motor_Output[Cartridge]=0;
 					break;
@@ -532,37 +503,51 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			
 			uint8_t Data[8]={0};
 			Data[0]=is_red_or_blue();		//红蓝方 视觉需求
-			Data[1]=direction;		//移动方向
-			Data[2]=Last_Dir;		//云台规避
+			Data[1]=Hit_Gimbal;		//云台规避
 			
+			#ifdef Test_Mode
+				Set_Game_Start();
+			#endif
 			if(GameState.game_progress==4)	//比赛开始
-				Data[3]=true;
+				Data[2]=true;
 			else
-				Data[3]=false;
+			{
+				Data[2]=false;
+				Field_Event_Data.Outpost_Alive=true;
+				Field_Event_Data.Base_Shield_Existence=true;
+			}
 			
-			Data[4]=Field_Event_Data.Outpost_Alive;	//前哨站存活状态
+			#ifdef Test_Mode
+				Set_Outpost_Alive();
+			#endif
+			Data[3]=Field_Event_Data.Outpost_Alive;	//前哨站存活状态
 			
-			Data[5]=Field_Event_Data.Base_Shield_Existence;	//基地护盾
-			
+			#ifdef Test_Mode
+				Set_Base_Shield_Existence();
+			#endif
+			Data[4]=Field_Event_Data.Base_Shield_Existence;	//基地护盾
+
 			#warning	//wait for test
-//			if(Shoot_cnt>=500)	//500发		Shootable
-//				Data[6]=false;
-//			else
-				Data[6]=true;
+			#ifndef Test_Mode
+				if(Shoot_cnt>=500)	//500发		Shootable
+					Data[5]=false;
+				else
+			#endif
+				Data[5]=true;
 			
-//			if( (is_red_or_blue()==BLUE && Robot_Interactive.Receive_ID==107) ||
-//					(is_red_or_blue()==RED  && Robot_Interactive.Receive_ID==7))
-//			{
-//				if(Inspect_Position==0 && Robot_Interactive.Data[0]>0 && Robot_Interactive.Data[0]<=4)
-//				{
-//					Inspect_Position=Robot_Interactive.Data[0];
-////					Buzzer_Short(1);
-//				}
-//			}
+			#ifdef Test_Mode
+				Make_Receive_Robot();
+			#endif
 			
-			Data[7]=Inspect_Position;	//receive data from other robot, send to gimbal where to inspect
-			
-			CAN_Send_Gimbal(&hcan1,Data,8);
+			CAN_Send_Gimbal(&hcan1,Data,6);
+
+			if(Inspect_Position!=0)
+			{
+				uint8_t Data_Gimbal2[8]={0};
+				Data_Gimbal2[0]=Inspect_Position;
+				Inspect_Position=0;
+				CAN_Send_Gimbal2(&hcan1,Data_Gimbal2,1);
+			}
 		}
 	}
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
@@ -589,7 +574,6 @@ void TIM6_DAC_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM6_DAC_IRQn 0 */
 	static uint32_t TIM6_cnt=0;
-	++TIM6_cnt;
   /* USER CODE END TIM6_DAC_IRQn 0 */
   HAL_TIM_IRQHandler(&htim6);
   /* USER CODE BEGIN TIM6_DAC_IRQn 1 */
@@ -597,6 +581,7 @@ void TIM6_DAC_IRQHandler(void)
 		Buzzer_Busy=true;
 	if(Buzzer_Busy==true)
 	{
+		++TIM6_cnt;
 		if(TIM6_cnt<Buzzer_On_Time)
 		{
 			if(Buzzer_Working==false)

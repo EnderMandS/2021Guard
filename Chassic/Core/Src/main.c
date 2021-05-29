@@ -105,7 +105,7 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-	srand(0xAA);
+	srand(0xCC);
 	Bsp_UART_Receive_IT(&huart6,Judgement_Buf,JUDGEMENT_BUF_LEN);
 	CAN_Filter_Init();
 	Chassis_init();

@@ -53,14 +53,13 @@ typedef struct
 extern gear_moto_measure_t gear_motor_data[12];
 extern int16_t Motor_Output[12];
 extern uint8_t Motor_Output_State[12];
-extern int Chassic_Dir;
-extern int Chassic_Last_Dir;
 extern bool Game_Start;
 extern bool Base_Shield;
 extern bool Outpost_Alive;
 extern uint32_t Can_Error;
 extern bool Shootable;
 extern uint8_t Inspect_Position;
+extern bool Hit_Gimbal;
 
 void get_gear_motor_measure(gear_moto_measure_t *ptr, uint8_t rxd[]);
 void get_motor_measure(gear_moto_measure_t *ptr, uint8_t rxd[]);

@@ -19,14 +19,20 @@ typedef struct
 	bool Outpost_Alive;	//己方前哨战存活状态
 }Field_Event;
 
-extern bool No_Bullet;
 extern bool Rand_Change_Flag;
 extern Field_Event Field_Event_Data;
 extern uint8_t Inspect_Position;
+extern uint8_t Gimbal_Position;
 
 void Check_Being_Hit(void);
 void Rand_Dir_Change(void);
 void Event_Decode(uint32_t Event);
 void Receive_Robot_Interactive(void);
+void Make_Receive_Robot(void);
+void Set_Game_Start(void);
+void Set_Outpost_Alive(void);
+void Set_Base_Shield_Existence(void);
+float Random(float Min, float Max);
+void Rand_Dir_Time(void);
 
 #endif

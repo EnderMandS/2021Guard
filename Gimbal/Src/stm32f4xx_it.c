@@ -358,7 +358,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						remote_control.switch_left=3;
 					if(remote_control.switch_left==3 && Outpost_Alive==false)	//Outpost not alive, open chassis
 						remote_control.switch_left=1;
-					if(remote_control.switch_left==3 && Game_Start==false)	//Match end, back to railway middle
+					if((remote_control.switch_left==3||remote_control.switch_left==1) && Game_Start==false)	//Match end, back to railway middle
 						remote_control.switch_left=2;
 				#else		//Match start open friction,chassis.	Remote priority higher than auto
 					if(remote_control.switch_left==2 && Game_Start==true)
@@ -385,7 +385,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						break;
 					
 					default:
-						Chassic_State=3;
+						Chassic_State=0;
 						Shoot_Ctrl=0;	//None friction forbid flick
 						break;
 				}
@@ -401,11 +401,11 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				{
 					switch(remote_control.switch_left)
 					{
-						case 1:	//Friction + flick + chassis
+						case 1:	//chassis
 						{
-							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
-							Shoot_Speed_Pid_Calc(Firc_Speed);
-							Shoot_Ctrl=2;	//Fast
+							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=0;
+							Shoot_Speed_Pid_Calc(0);
+							Shoot_Ctrl=0;
 							Chassic_State=1;
 						}
 						break;
@@ -495,7 +495,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				Shoot_Ctrl=0;
 				Aimming=false;
 			}
-			uint8_t Chassic_Data[5]={Chassic_State,Shoot_Ctrl,Switch_State,Aimming,Gimbal_Inspect_Busy};
+			uint8_t Chassic_Data[5]={Chassic_State,Shoot_Ctrl,Switch_State,Aimming,Inspect_Position};
 			Chassic_Ctrl(Chassic_Data,5);
 			CAN_Motor_Ctrl(&hcan1,Motor_Output);
 			for(uint8_t i=0; i<12; ++i)

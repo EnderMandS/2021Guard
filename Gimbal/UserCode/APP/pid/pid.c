@@ -149,12 +149,12 @@ void pid_init(PID_TypeDef *pid)
 	float PitchCurrentTick, PitchLastTick;
 #else
 	float PitchOPIDP = 5;
-	float PitchOPIDI = 0.03;
+	float PitchOPIDI = 0.05;	//0.05
 	float PitchOPIDD = 10;
 
 	float PitchOPIDCurrentError = 0;
 	float PitchOPIDLastError = 0;
-	float PitchOPIDIMax = 30;
+	float PitchOPIDIMax = 45;	//50
 	float PitchOPIDPIDMax = 30000;
 	float PitchOPIDPout;
 	float PitchOPIDIout;
