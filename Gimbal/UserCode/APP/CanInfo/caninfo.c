@@ -151,6 +151,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 						Inspect_Position=Position_Inspect_cnt=0;
 					break;
 				}
+				memcpy(&Inspect_Angle,&rx_data[1],sizeof(float));
+				Angle_Stay=Angle_Stay_Time;
 				Buzzer_Short(1);
 			break;
 			

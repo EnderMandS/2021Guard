@@ -142,7 +142,7 @@ int main(void)
 			Send_Position_Buf[0] = 0x5A;
 			memcpy(Send_Position_Buf+1,send_pitch.c,4);	//1-4 pitch
 			memcpy(Send_Position_Buf+5,send_yaw.c,4);		//5-8 yaw
-			Send_Position_Buf[9]=25;
+			Send_Position_Buf[9]=26;
 			Send_Position_Buf[10]=0;
 			Send_Position_Buf[11] = color;
 			Send_Position_Buf[12] = false;

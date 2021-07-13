@@ -9,6 +9,7 @@
 #define Soft_Start_Up_Error 0.5f
 #define pitch_center ((Pitch_Motor_Zero+Pitch_Limit_Bottom)/2.f)
 
+#define Angle_Stay_Time 400		//400Hz
 #define Position_Inspect_Time 5
 #define Front_Back_Time 2
 
@@ -29,6 +30,8 @@ extern float pit_nowangle;
 extern bool Pitch_USE_Gyro;
 extern bool Limit_Yaw;
 extern uint8_t Position_Inspect_cnt;
+extern float Inspect_Angle;
+extern uint32_t Angle_Stay;
 
 void Gimbal_Sotf_Start(void);
 void Gimbal_Remote_Control(void);

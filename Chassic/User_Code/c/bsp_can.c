@@ -193,7 +193,7 @@ void CAN_Send_Gimbal(CAN_HandleTypeDef *hcan, uint8_t Data[], uint8_t Len)
 	memcpy(can_send_data,Data,Len);
 	HAL_CAN_AddTxMessage(&hcan1, &can_tx_message, can_send_data, &send_mail_box);
 }
-void CAN_Send_Gimbal2(CAN_HandleTypeDef *hcan, uint8_t Data[], uint8_t Len)
+HAL_StatusTypeDef CAN_Send_Gimbal2(CAN_HandleTypeDef *hcan, uint8_t Data[], uint8_t Len)
 {
 	CAN_TxHeaderTypeDef can_tx_message;
 	can_tx_message.IDE = CAN_ID_STD;
@@ -203,5 +203,5 @@ void CAN_Send_Gimbal2(CAN_HandleTypeDef *hcan, uint8_t Data[], uint8_t Len)
 	uint32_t send_mail_box;
 	can_tx_message.StdId = 0x1BB;
 	memcpy(can_send_data,Data,Len);
-	HAL_CAN_AddTxMessage(&hcan1, &can_tx_message, can_send_data, &send_mail_box);
+	return HAL_CAN_AddTxMessage(&hcan1, &can_tx_message, can_send_data, &send_mail_box);
 }

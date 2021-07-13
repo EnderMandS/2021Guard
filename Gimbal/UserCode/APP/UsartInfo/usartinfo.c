@@ -31,7 +31,10 @@ float2uchar send_yaw;
 frame_judge save_frame_id_message[10] = {0};
 uint8_t extern_view_send_state = 0;
 uint8_t Aimming=0;		//判断自瞄或巡检
-uint16_t Slow_Inspect_Speed=25;
+#define Slow_Time 15	//20ms
+#define Shot_State_Stay_Time 10	//20ms
+uint16_t Shot_Stay_Time=0;
+uint16_t Slow_Inspect_Speed=Slow_Time;
 uint32_t Gryo_Update_cnt=0;
 
 /**
@@ -55,6 +58,7 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 		 *	[7]-[10] yaw
 		 *	[11] Air resistance
 		 *	[12] Tail 0xFA
+		 *	50Hz 20ms
 		*/
 		memcpy(&rx_view_buf, View_Buf, 100); //数据长度rx_view_buf
 		if (rx_view_buf[0] == 0xAF && rx_view_buf[12] == 0xFA)	//标识符
@@ -76,7 +80,7 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 				case 0xDD:
 					view_send_state = 1;
 					Aimming = 0;
-					Slow_Inspect_Speed=25;
+					Slow_Inspect_Speed=Slow_Time;
 					Gimbal_Inspect_setSpeed(Gimbal_Inspect_SPEED_SLOW);
 					break;
 				
@@ -88,8 +92,15 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 				case 0xCC:
 					view_send_state = 3;
 					Aimming = 1;
-					Slow_Inspect_Speed=25;
-					view_shoot_mode = rx_view_buf[2]; //射击指令
+					Slow_Inspect_Speed=Slow_Time;
+					if(Shot_Stay_Time!=0)	//持续Shot_State_Stay_Time*20ms
+						--Shot_Stay_Time;
+					if(rx_view_buf[2]==0xEE || rx_view_buf[2]==0xFF)
+						Shot_Stay_Time=Shot_State_Stay_Time;
+					if(Shot_Stay_Time!=0)
+						view_shoot_mode=0xEE;	//high
+					else
+						view_shoot_mode=0xDD;	//none
 					break;
 				
 				default:

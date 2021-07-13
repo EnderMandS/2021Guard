@@ -535,18 +535,15 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			#endif
 				Data[5]=true;
 			
-			#ifdef Test_Mode
-				Make_Receive_Robot();
-			#endif
-			
 			CAN_Send_Gimbal(&hcan1,Data,6);
 
 			if(Inspect_Position!=0)
 			{
 				uint8_t Data_Gimbal2[8]={0};
 				Data_Gimbal2[0]=Inspect_Position;
-				Inspect_Position=0;
-				CAN_Send_Gimbal2(&hcan1,Data_Gimbal2,1);
+				memcpy(&Data_Gimbal2[1],&Target_Angle,sizeof(float));
+				if(CAN_Send_Gimbal2(&hcan1,Data_Gimbal2,1+sizeof(float))==HAL_OK)
+					Inspect_Position=0;
 			}
 		}
 	}

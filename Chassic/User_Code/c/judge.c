@@ -188,16 +188,16 @@ bool Judge_Read_Data(uint8_t *ReadFromUsart)
 						Shoot_Update=true;
 						++Shoot_cnt;
 						#ifdef Test_Mode
-							if(Shoot_cnt>499)
+							Shoot_Speed[Shoot_cnt-1]=ShootData.bullet_speed;
+							for(uint32_t i=0; i<Shoot_cnt; ++i)
+								Shoot_Speed_Aver+=Shoot_Speed[i];
+							Shoot_Speed_Aver/=Shoot_cnt;
+							if(Shoot_cnt>=499)
 							{
 								Shoot_cnt=0;
 								memset(Shoot_Speed,0,500);
 								Shoot_Speed_Aver=0;
 							}
-							Shoot_Speed[Shoot_cnt-1]=ShootData.bullet_speed;
-							for(uint32_t i=0; i<Shoot_cnt; ++i)
-								Shoot_Speed_Aver+=Shoot_Speed[i];
-							Shoot_Speed_Aver/=Shoot_cnt;
 							if(Max_Shoot_Speed<ShootData.bullet_speed)
 								Max_Shoot_Speed=ShootData.bullet_speed;
 						#endif
@@ -222,6 +222,7 @@ bool Judge_Read_Data(uint8_t *ReadFromUsart)
 					
 					case ID_robot_command:	//客户端下发信息
 						memcpy(&Robot_Command,(ReadFromUsart + DATA),LEN_robot_command);
+						Robot_Command_Receive();
 					break;
 					
 					default:

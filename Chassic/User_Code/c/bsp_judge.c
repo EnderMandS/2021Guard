@@ -4,6 +4,7 @@
 #include "shoot.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "buzzer.h"
 #include "bsp_can.h"
 #include "can.h"
@@ -191,18 +192,6 @@ void Receive_Robot_Interactive(void)
 	}
 }
 
-
-uint8_t Make_Position=0;
-void Make_Receive_Robot(void)
-{
-	if(Inspect_Position==0 && Make_Position>0 && Make_Position<=4)
-	{
-		Inspect_Position=Make_Position;
-		Make_Position=0;
-		Buzzer_Short(1);
-	}
-}
-
 bool Game_Start=false;
 void Set_Game_Start(void)
 {
@@ -240,5 +229,88 @@ void Rand_Dir_Time(void)
 		}
 		if(Rand_cnt==0)
 			Rand_cnt=(uint32_t)(Random(0.5,3)*400);
+	}
+}
+
+float Target_Angle=0;
+#define Red_Guard_Position_X 5.42f
+#define Red_Guard_Position_Y 8.44f
+#define Blue_Guard_Position_X 22.71f
+#define Blue_Guard_Position_Y 8.26f
+void Robot_Command_Receive(void)
+{
+	if(Robot_Command.target_robot_ID!=7 && Robot_Command.target_robot_ID!=107)
+		return;
+	
+	//Quadrant
+	if(is_red_or_blue()==RED)
+	{
+		if(Robot_Command.target_position_x>Red_Guard_Position_X && Robot_Command.target_position_y<=Red_Guard_Position_Y)
+			Inspect_Position=1;
+		else if(Robot_Command.target_position_x>Red_Guard_Position_X && Robot_Command.target_position_y>Red_Guard_Position_Y)
+			Inspect_Position=2;
+		else if(Robot_Command.target_position_x<=Red_Guard_Position_X && Robot_Command.target_position_y>Red_Guard_Position_Y)
+			Inspect_Position=3;
+		else if(Robot_Command.target_position_x<=Red_Guard_Position_X && Robot_Command.target_position_y<=Red_Guard_Position_Y)
+			Inspect_Position=4;
+	}
+	else
+	{
+		if(Robot_Command.target_position_x<=Blue_Guard_Position_X && Robot_Command.target_position_y>Blue_Guard_Position_Y)
+			Inspect_Position=1;
+		else if(Robot_Command.target_position_x<=Blue_Guard_Position_X && Robot_Command.target_position_y<=Blue_Guard_Position_Y)
+			Inspect_Position=2;
+		else if(Robot_Command.target_position_x>Blue_Guard_Position_X && Robot_Command.target_position_y<=Blue_Guard_Position_Y)
+			Inspect_Position=3;
+		else if(Robot_Command.target_position_x>Blue_Guard_Position_X && Robot_Command.target_position_y>Blue_Guard_Position_Y)
+			Inspect_Position=4;
+	}
+	
+	//Angle
+	if(is_red_or_blue()==RED)	//arctan dead area
+	{
+		if(Robot_Command.target_position_y==Red_Guard_Position_Y)
+		{
+			if(Robot_Command.target_position_x>Red_Guard_Position_X)
+				Target_Angle=90;
+			else
+				Target_Angle=270;
+			return;
+		}
+	}
+	else
+	{
+		if(Robot_Command.target_position_y==Blue_Guard_Position_Y)
+		{
+			if(Robot_Command.target_position_x<Blue_Guard_Position_X)
+				Target_Angle=90;
+			else
+				Target_Angle=270;
+			return;
+		}
+	}
+	float dif_x=Robot_Command.target_position_x-Blue_Guard_Position_X;
+	float dif_y=Robot_Command.target_position_y-Blue_Guard_Position_Y;
+	switch(Inspect_Position)
+	{
+		case 1:
+			Target_Angle=atan(-dif_x/dif_y);
+		break;
+		
+		case 2:
+			Target_Angle=atan(dif_y/dif_x)+90;
+		break;
+		
+		case 3:
+			Target_Angle=atan(dif_x/-dif_y)+180;
+		break;
+		
+		case 4:
+			Target_Angle=atan(dif_y/dif_x)+270;
+		break;
+		
+		default:
+			Target_Angle=45.f;
+		break;
 	}
 }

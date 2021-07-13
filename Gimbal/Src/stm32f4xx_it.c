@@ -68,7 +68,7 @@ uint8_t TIM1_Div=0;
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define Auto_Ctrl
+//#define Auto_Ctrl
 
 /* USER CODE END PD */
 
@@ -79,7 +79,7 @@ uint8_t TIM1_Div=0;
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-int Firc_Speed=-2000;		//6100
+int Firc_Speed=-6100;		//6100
 /*
 	3000 10m/s
 	
