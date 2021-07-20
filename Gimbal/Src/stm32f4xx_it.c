@@ -34,6 +34,7 @@
 #include "classic.h"
 #include "guard_judge.h"
 #include "buzzer.h"
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,7 +69,6 @@ uint8_t TIM1_Div=0;
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-//#define Auto_Ctrl
 
 /* USER CODE END PD */
 
@@ -321,187 +321,194 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		else
 			Buzzer_ms(1,50,2000);
 	}
-	else	//working
-	{
-		yaw_nowangle = Yaw_Motor_Angle_Change();
-		if(Pitch_USE_Gyro==true)
-			pit_nowangle = eular[0];
-		else
-			pit_nowangle = gear_motor_data[Gimbal_P].angle*Motor_Ecd_to_Ang - Zero_Offset_Cal();	//motor angle - zero offset
-		
-		switch(remote_control.switch_right)	//left switch
-		{
-			case 1:	//Auto
-			{
-				Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
-				Gimbal_Sotf_Start();
-				Gimbal_Automatic_control();
-				switch(view_shoot_mode)	//Flick	DD:None, EE:Slow, FF:Fast
-				{
-					case 0xEE:	//Fast
-						Shoot_Ctrl=2;
-						break;
-					
-					case 0xFF:	//Slow
-						Shoot_Ctrl=3;
-						break;
-					
-					default:		//None
-						Shoot_Ctrl=0;
-						break;
-				}
-				if( Yaw_At_Border()==true && view_shoot_mode==0xEE && Limit_Yaw==true )
-					Shoot_Ctrl=3;
-				
-				#ifdef Auto_Ctrl	//According to match state, chooce different function.  Auto priority higher than remote
-					if(remote_control.switch_left==2 && Game_Start==true)	//Mtach start open fric
-						remote_control.switch_left=3;
-					if(remote_control.switch_left==3 && Outpost_Alive==false)	//Outpost not alive, open chassis
-						remote_control.switch_left=1;
-					if((remote_control.switch_left==3||remote_control.switch_left==1) && Game_Start==false)	//Match end, back to railway middle
-						remote_control.switch_left=2;
-				#else		//Match start open friction,chassis.	Remote priority higher than auto
-					if(remote_control.switch_left==2 && Game_Start==true)
-						remote_control.switch_left=1;
-				#endif
-				
-				switch(remote_control.switch_left)
-				{
-					case 1:	//Chassis + Friction
-						Chassic_State=1;
-						if(Shootable==false)
-							Shoot_Speed_Pid_Calc(0);
-						else
-						{
-							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
-							Shoot_Speed_Pid_Calc(Firc_Speed);
-						}
-						break;
-					
-					case 3:	//Friction
-						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
-						Chassic_State=3;
-						Shoot_Speed_Pid_Calc(Firc_Speed);
-						break;
-					
-					default:
-						Chassic_State=0;
-						Shoot_Ctrl=0;	//None friction forbid flick
-						break;
-				}
-			}
-			break;
-			
-			case 3:	//Remote
-			{
-				Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
-				Gimbal_Sotf_Start();
-				Gimbal_Remote_Control();
-				if(sotf_start==0)		//wait for gimbal soft start
-				{
-					switch(remote_control.switch_left)
-					{
-						case 1:	//chassis
-						{
-							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=0;
-							Shoot_Speed_Pid_Calc(0);
-							Shoot_Ctrl=0;
-							Chassic_State=1;
-						}
-						break;
-						
-						case 3:	//friction + flick
-						{
-							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
-							Shoot_Speed_Pid_Calc(Firc_Speed);
-							Shoot_Ctrl=2;	//Fast
-							Chassic_State=0;
-						}
-						break;
-						
-						case 2:	//None
-						{
-							Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=0;
-							Shoot_Ctrl=0;
-							Chassic_State=0;
-							Shoot_Speed_Pid_Calc(0);	//friction
-						}
-						break;
-					}
-				}
-			}
-			break;
-			
-			case 2:	//None
-			{
-				read_allow = 0;
-				control_allow = 0;
-				sotf_start = 1;
-				Shoot_Speed_Pid_Calc(0);	//friction
-				Motor_Output[Fric_1]=Motor_Output[Fric_2]=0;
-				switch(remote_control.switch_left)
-				{
-					case 1:
-						Motor_Output_State[Gimbal_Y]=1;
-						if( Gimbal_Keep_Middle()==true )
-							Chassic_State=2;	//Get railway lenth
-					break;
-					
-					default:
-						Chassic_State=0;
-						Shoot_Ctrl=0;
-					break;
-				}
-			}
-			break;
-			
-			default:
-				break;
-		}
 
-		if(Motor_Output_State[Gimbal_Y]==1)
-			Motor_Output[Gimbal_Y]=yaw;
-		else
-			Motor_Output[Gimbal_Y]=0;
-		
-		if(Motor_Output_State[Gimbal_P]==1)
-			Motor_Output[Gimbal_P]=pitch;
-		else
-			Motor_Output[Gimbal_P]=0;
-		
-		if(Motor_Output_State[Fric_1]==1)
-			Motor_Output[Fric_1]=Fric_wheel[0].output;
-		else
-			Motor_Output[Fric_1]=0;
-		
-		if(Motor_Output_State[Fric_2]==1)
-			Motor_Output[Fric_2]=Fric_wheel[1].output;
-		else
-			Motor_Output[Fric_2]=0;
-		
-		uint8_t Switch_State=0;	//Micro switch state
-		if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9) == GPIO_PIN_RESET)
-			Switch_State=0;
-		else
-			Switch_State=1;
-		
-		++TIM1_Div;
-		if(TIM1_Div==2)
+	yaw_nowangle = Yaw_Motor_Angle_Change();
+	if(Pitch_USE_Gyro==true)
+		pit_nowangle = eular[0];
+	else
+		pit_nowangle = gear_motor_data[Gimbal_P].angle*Motor_Ecd_to_Ang - Zero_Offset_Cal();	//motor angle - zero offset
+	
+	switch(remote_control.switch_right)	//left switch
+	{
+		case 1:	//Auto
 		{
-			TIM1_Div=0;
-			if(Shootable==false)	//Read for judgement, unablde to shoot, 500 bullte limit
+			Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
+			Gimbal_Sotf_Start();
+			Gimbal_Automatic_control();
+			switch(view_shoot_mode)	//Flick	DD:None, EE:Slow, FF:Fast
 			{
-				Chassic_State=1;
-				Shoot_Ctrl=0;
-				Aimming=false;
+				case 0xEE:	//Fast
+					Shoot_Ctrl=2;
+					break;
+				
+				case 0xFF:	//Slow
+					Shoot_Ctrl=3;
+					break;
+				
+				default:		//None
+					Shoot_Ctrl=0;
+					break;
 			}
-			uint8_t Chassic_Data[5]={Chassic_State,Shoot_Ctrl,Switch_State,Aimming,Inspect_Position};
-			Chassic_Ctrl(Chassic_Data,5);
-			CAN_Motor_Ctrl(&hcan1,Motor_Output);
-			for(uint8_t i=0; i<12; ++i)
-				Motor_Output_State[i]=0;
-			Chassic_State=Shoot_Ctrl=0;
+			if( Yaw_At_Border()==true && view_shoot_mode==0xEE && Limit_Yaw==true )
+				Shoot_Ctrl=3;
+			
+			#define Auto_Ctrl
+			#ifdef Auto_Ctrl	//According to match state, chooce different function.  Auto priority higher than remote
+				if(remote_control.switch_left==2 && Game_Start==true)	//Mtach start open fric
+					remote_control.switch_left=3;
+				if(remote_control.switch_left==3 && Outpost_Alive==false)	//Outpost not alive, open chassis
+					remote_control.switch_left=1;
+				if((remote_control.switch_left==3||remote_control.switch_left==1) && Game_Start==false)	//Match end, back to railway middle
+					remote_control.switch_left=2;
+			#else		//Match start open friction,chassis.	Remote priority higher than auto
+				if(remote_control.switch_left==2 && Game_Start==true)
+					remote_control.switch_left=1;
+			#endif
+			
+			switch(remote_control.switch_left)
+			{
+				case 1:	//Chassis + Friction
+					Chassic_State=1;
+					if(Shootable==false)
+						Shoot_Speed_Pid_Calc(0);
+					else
+					{
+						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
+						Shoot_Speed_Pid_Calc(Firc_Speed);
+					}
+					break;
+				
+				case 3:	//Friction
+					Chassic_State=0;
+					if(Shootable==false)
+						Shoot_Speed_Pid_Calc(0);
+					else
+					{
+						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
+						Shoot_Speed_Pid_Calc(Firc_Speed);
+					}
+					break;
+				
+				default:
+					Chassic_State=0;
+					Shoot_Speed_Pid_Calc(0);
+					Shoot_Ctrl=0;	//None friction forbid flick
+					break;
+			}
 		}
+		break;
+		
+		case 3:	//Remote
+		{
+			Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
+			Gimbal_Sotf_Start();
+			Gimbal_Remote_Control();
+			if(sotf_start==0)		//wait for gimbal soft start
+			{
+				switch(remote_control.switch_left)
+				{
+					case 1:	//chassis
+					{
+						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=0;
+						Shoot_Speed_Pid_Calc(0);
+						Shoot_Ctrl=0;
+						Chassic_State=1;
+					}
+					break;
+					
+					case 3:	//friction + flick
+					{
+						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
+						Shoot_Speed_Pid_Calc(Firc_Speed);
+						Shoot_Ctrl=2;	//Fast
+						Chassic_State=0;
+					}
+					break;
+					
+					case 2:	//None
+					{
+						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=0;
+						Shoot_Ctrl=0;
+						Chassic_State=0;
+						Shoot_Speed_Pid_Calc(0);	//friction
+					}
+					break;
+				}
+			}
+		}
+		break;
+		
+		case 2:	//None
+		{
+			read_allow = 0;
+			control_allow = 0;
+			sotf_start = 1;
+			Shoot_Speed_Pid_Calc(0);	//friction
+			Motor_Output[Fric_1]=Motor_Output[Fric_2]=0;
+			switch(remote_control.switch_left)
+			{
+				case 1:
+					Motor_Output_State[Gimbal_Y]=1;
+					if( Gimbal_Keep_Middle()==true )
+						Chassic_State=2;	//Get railway lenth
+				break;
+				
+				default:
+					Chassic_State=0;
+					Shoot_Ctrl=0;
+				break;
+			}
+		}
+		break;
+		
+		default:
+			break;
+	}
+
+	if(Motor_Output_State[Gimbal_Y]==1)
+		Motor_Output[Gimbal_Y]=yaw;
+	else
+		Motor_Output[Gimbal_Y]=0;
+	
+	if(Motor_Output_State[Gimbal_P]==1)
+		Motor_Output[Gimbal_P]=pitch;
+	else
+		Motor_Output[Gimbal_P]=0;
+	
+	if(Motor_Output_State[Fric_1]==1)
+		Motor_Output[Fric_1]=Fric_wheel[0].output;
+	else
+		Motor_Output[Fric_1]=0;
+	
+	if(Motor_Output_State[Fric_2]==1)
+		Motor_Output[Fric_2]=Fric_wheel[1].output;
+	else
+		Motor_Output[Fric_2]=0;
+	
+	uint8_t Switch_State=0;	//Micro switch state
+	if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9) == GPIO_PIN_RESET)
+		Switch_State=0;
+	else
+		Switch_State=1;
+	
+	++TIM1_Div;
+	if(TIM1_Div==2)
+	{
+		TIM1_Div=0;
+		if(Shootable==false)	//Read for judgement, unablde to shoot, 500 bullte limit
+		{
+			Chassic_State=1;
+			Shoot_Ctrl=0;
+			Aimming=false;
+		}
+		uint8_t Chassic_Data[5]={Chassic_State,Shoot_Ctrl,Switch_State,Aimming,Inspect_Position};
+		Chassic_Ctrl(Chassic_Data,5);
+	}
+	else if(TIM1_Div==1)
+	{
+		CAN_Motor_Ctrl(&hcan1,Motor_Output);
+		memset(Motor_Output_State,0,sizeof(Motor_Output_State));	//clean
+		Chassic_State=Shoot_Ctrl=0;
 	}
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */
 }

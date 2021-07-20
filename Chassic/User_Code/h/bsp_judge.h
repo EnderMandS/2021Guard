@@ -26,7 +26,6 @@ extern uint8_t Gimbal_Position;
 extern float Target_Angle;
 
 void Check_Being_Hit(void);
-void Rand_Dir_Change(void);
 void Event_Decode(uint32_t Event);
 void Receive_Robot_Interactive(void);
 void Set_Game_Start(void);

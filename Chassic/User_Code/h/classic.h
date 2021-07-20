@@ -8,11 +8,11 @@
 #define USE_SPRING		//非弹簧模式
 #define RAND_DIR
 
-#define Classic_Slow		2000	//瞄准
+#define Classic_Slow		3000	//瞄准
 #define Classic_Middle	4000	//巡检
 #define Classic_Fast		8000	//闪避
 
-#define Chassic_Spring_Slow		2000
+#define Chassic_Spring_Slow		3000
 #define Chassic_Spring_Middle	4000
 #define Chassic_Spring_Fast		8000
 

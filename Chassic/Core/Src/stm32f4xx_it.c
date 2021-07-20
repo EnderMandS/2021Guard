@@ -269,282 +269,282 @@ void TIM1_UP_TIM10_IRQHandler(void)
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
 	if(Motor_Power_Up==0)
 	{
-		#ifndef Test_Mode
-			if(	gear_motor_data[Chassic_L].real_current!=0 &&
-					gear_motor_data[Chassic_R].real_current!=0 &&
-					gear_motor_data[Cartridge].real_current!=0)
-		#endif
-			Motor_Power_Up=1;
-		#ifndef Test_Mode
-			else
-				Buzzer_ms(1,50,2000);
-		#endif
+		if(	gear_motor_data[Chassic_L].real_current!=0 &&
+				gear_motor_data[Chassic_R].real_current!=0 &&
+				gear_motor_data[Cartridge].real_current!=0)
+		Motor_Power_Up=1;
+		else
+			Buzzer_ms(1,50,2000);
 	}
-	else
-	{
-		++Time_Tick;	//Time_Tick在CAN接收服务函数中置零
-		if(Time_Tick>200)	//没有云台数据，停止动作
-		{
-			#ifdef Test_Mode
-				Move_Allow=0;
-			#else
-				Move_Allow=1;
-			#endif
-			Shoot_State=0;
-			Switch_State[0]=Switch_State[1]=1;
-		}
-		
-		if(Changing_Speed_Flag==0)	//速度反向时不检测光电开关
-		{
-			if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_RESET)	//左边检测到墙壁，开始反转
-			{
-				eliminate_dithering_right = 0;
-				eliminate_dithering_left++;
-				if (eliminate_dithering_left >= 20) //消抖
-				{
-					#ifdef USE_SPRING
-						direction = touch_Left;
-					#else
-						direction = Last_Dir = touch_Left;
-					#endif
-					Changing_Speed_Flag=1;	//方向改变，标志位置1
-					Buzzer_Short(1);
-				}
-			}
-			else if(HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_RESET)
-			{
-				eliminate_dithering_right++;
-				eliminate_dithering_left = 0;
-				if (eliminate_dithering_right >= 20)
-				{
-					#ifdef USE_SPRING
-						direction = touch_Right;
-					#else
-						direction = Last_Dir = touch_Right;
-					#endif
-					Hit_Gimbal=true;
-					Changing_Speed_Flag=1;	//方向改变，标志位置1
-					Buzzer_Short(1);
-				}
-			}
-		}
-		else if(Changing_Speed_Flag==1)
-		{
-			if(direction==touch_Left)
-			{
-				if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_SET)
-				{
-						Changing_Speed_Flag=0;
-						if(Move_Allow==1)
-							gear_motor_data[Moto_ID[0]].round_cnt=0;
-				}
-			}
-			else if(direction==touch_Right)
-			{
-				if(HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_SET)
-				{
-						Changing_Speed_Flag=0;
-						Hit_Gimbal=false;
-						if(Move_Allow==1)
-							gear_motor_data[Moto_ID[0]].round_cnt=0;
-				}
-			}
-		}
 
-		Rail_Position=(abs(gear_motor_data[Moto_ID[0]].round_cnt)*1.f)/(Rail_Len*1.f);
-		
-		switch (Move_Allow)
+	++Time_Tick;	//Time_Tick在CAN接收服务函数中置零
+	if(Time_Tick>200)	//没有云台数据，停止动作
+	{
+		#ifdef Test_Mode
+			Move_Allow=0;
+		#else
+			Move_Allow=1;
+		#endif
+		Shoot_State=0;
+		Switch_State[0]=Switch_State[1]=1;	//微动开关状态,没用到
+	}
+	
+	if(Changing_Speed_Flag==0)	//速度反向时不检测光电开关	close check
+	{
+		if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_RESET)	//左边检测到墙壁，开始反转
 		{
-			case 1:	//正常移动
+			eliminate_dithering_right = 0;
+			eliminate_dithering_left++;
+			if (eliminate_dithering_left >= 20) //消抖
 			{
 				#ifdef USE_SPRING
-					Check_Being_Hit();	//被击打改变速度
+					direction = touch_Left;
+				#else
+					direction = Last_Dir = touch_Left;
 				#endif
-					if(Measuer_State==End_Measure)	//已获得轨道长度
-					{
-						if(Aim==false)	//没有瞄准到目标：随机变向
-						{
-							Rand_Dir_Time();
-						}
-					}
-					Spring(direction,Classic_Move_Speed);
-				break;
+				Changing_Speed_Flag=1;	//方向改变，标志位置1
+				Buzzer_Short(1);
 			}
-			
-			case 2:	//获取轨道长度
+		}
+		else if(HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_RESET)
+		{
+			eliminate_dithering_right++;
+			eliminate_dithering_left = 0;
+			if (eliminate_dithering_right >= 20)
 			{
-				if(Measuer_State!=End_Measure)
-				{
-					Spring(direction,Classic_Move_Speed);
-					Measuer_Rail_Len();
-				}
-				else	//测量完之后回到轨道中间停下
-				{
-					Go_To_Middle(Chassic_Spring_Slow);
-				}
-				break;
+				#ifdef USE_SPRING
+					direction = touch_Right;
+				#else
+					direction = Last_Dir = touch_Right;
+				#endif
+				Hit_Gimbal=true;
+				Changing_Speed_Flag=1;	//方向改变，标志位置1
+				Buzzer_Short(1);
 			}
-			
-			case 3:		//回到轨道中间
-				if(Measuer_State==End_Measure)
-					Go_To_Middle(Chassic_Spring_Slow);
-				else
+		}
+	}
+	else if(Changing_Speed_Flag==1)	//Leave check
+	{
+		if(direction==touch_Left)
+		{
+			if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_SET)
+			{
+				Changing_Speed_Flag=0;
+				if(Move_Allow==1)
+					gear_motor_data[Moto_ID[0]].round_cnt=0;
+			}
+		}
+		else if(direction==touch_Right)
+		{
+			if(HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_SET)
+			{
+				Changing_Speed_Flag=0;
+				Hit_Gimbal=false;
+				if(Move_Allow==1)
+					gear_motor_data[Moto_ID[0]].round_cnt=0;
+			}
+		}
+	}
+
+	if(Measuer_State==End_Measure)
+		Rail_Position=(abs(gear_motor_data[Moto_ID[0]].round_cnt)*1.f)/(Rail_Len*1.f);
+	
+	switch (Move_Allow)
+	{
+		case 1:	//正常移动
+		{
+			#ifdef USE_SPRING
+				Check_Being_Hit();	//被击打改变速度or toggle direction
+			#endif
+				if(Measuer_State==End_Measure)	//已获得轨道长度
 				{
-					motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,0);
-					for(uint8_t i=0; i<2; ++i)
+					if(Aim==false)	//没有瞄准到目标：随机变向
 					{
-						motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
-						Motor_Output[ Moto_ID[i] ]=0;
+						Rand_Dir_Time();
 					}
 				}
+				Spring(direction,Classic_Move_Speed);
 			break;
-			
-			default:	//停止动作
+		}
+		
+		case 2:	//获取轨道长度
+		{
+			if(Measuer_State!=End_Measure)
 			{
+				Spring(direction,Classic_Move_Speed);
+				Measuer_Rail_Len();
+			}
+			else	//测量完之后回到轨道中间停下
+			{
+				Go_To_Middle(Chassic_Spring_Slow);
+			}
+			break;
+		}
+		
+		case 3:		//回到轨道中间
+			if(Measuer_State==End_Measure)
+				Go_To_Middle(Chassic_Spring_Slow);
+			else
+			{
+				motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,0);
 				for(uint8_t i=0; i<2; ++i)
 				{
-					motor_pid[i].target=0;
 					motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
 					Motor_Output[ Moto_ID[i] ]=0;
 				}
+			}
+		break;
+		
+		default:	//停止动作
+		{
+			for(uint8_t i=0; i<2; ++i)
+			{
+				motor_pid[i].target=0;
+				motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
+				Motor_Output[ Moto_ID[i] ]=0;
+			}
+			break;
+		}
+	}
+	
+	Heat_Rest=320-PowerHeatData.shooter_id1_17mm_cooling_heat;	//剩余热量
+	if(Heat_Rest>200)	//剩余热量多，高射频消耗热量
+		Shoot_Ultra_Mode=1;
+	else if(Heat_Rest<100)
+		Shoot_Ultra_Mode=0;
+	
+	if(Shoot_State!=0)
+	{
+		if(Ka_Dan==false)
+		{
+			switch(Shoot_State)	//射击模式
+			{
+				case 1:		//Single
+					if(Heat_Rest>20)
+					{
+						Shoot_State=0;
+						Cartridge_angle=(Cartridge_angle+45)%360;
+						Cartridge_wheel.output=gear_moto_position_pid_calc(&Cartridge_Position_Pid[OUT],&Cartridge_Position_Pid[IN],Cartridge_angle,gear_motor_data[Cartridge].real_total_angle,gear_motor_data[Cartridge].speed_rpm);
+					}
+					else
+					{
+						Cartridge_wheel_PID_Calc(0);
+						Motor_Output[Cartridge]=0;
+					}
+				break;
+				
+				case 2:		//Fast
+					if(Shoot_Ultra_Mode==1)
+						Cartridge_wheel_PID_Calc(Cartridge_Ultra);
+					else if(Heat_Rest>50)
+						Cartridge_wheel_PID_Calc(Cartridge_Fast);
+					else
+						Cartridge_wheel_PID_Calc(Cartridge_Slow);
+					Motor_Output[Cartridge]=Cartridge_wheel.output;
+				break;
+				
+				case 3:		//Slow
+					if(Heat_Rest>40)
+					{
+						Cartridge_wheel_PID_Calc(Cartridge_Slow);
+						Motor_Output[Cartridge]=Cartridge_wheel.output;
+					}
+					else
+					{
+						Cartridge_wheel_PID_Calc(0);
+						Motor_Output[Cartridge]=0;
+					}
+				break;
+				
+				default:
+					Cartridge_wheel_PID_Calc(0);
+					Motor_Output[Cartridge]=0;
 				break;
 			}
 		}
 		
-		Heat_Rest=320-PowerHeatData.shooter_id1_17mm_cooling_heat;	//剩余热量
-		if(Heat_Rest>200)	//剩余热量多，高射频消耗热量
-			Shoot_Ultra_Mode=1;
-		else if(Heat_Rest<100)
-			Shoot_Ultra_Mode=0;
-		
-		if(Shoot_State!=0)
+		if(Motor_Output[Cartridge]>9500 && Ka_Dan==false)
 		{
-			if(Ka_Dan==false)
+			++Ka_Dan_cnt;
+			if(Ka_Dan_cnt>400)	//1s 400hz
 			{
-				switch(Shoot_State)	//射击模式
-				{
-					case 1:		//Single
-						if(Heat_Rest>20)
-						{
-							Shoot_State=0;
-							Cartridge_angle=(Cartridge_angle+45)%360;
-							Cartridge_wheel.output=gear_moto_position_pid_calc(&Cartridge_Position_Pid[OUT],&Cartridge_Position_Pid[IN],Cartridge_angle,gear_motor_data[Cartridge].real_total_angle,gear_motor_data[Cartridge].speed_rpm);
-						}
-						else
-						{
-							Cartridge_wheel_PID_Calc(0);
-							Motor_Output[Cartridge]=0;
-						}
-					break;
-					
-					case 2:		//Fast
-						if(Shoot_Ultra_Mode==1)
-							Cartridge_wheel_PID_Calc(Cartridge_Ultra);
-						else if(Heat_Rest>50)
-							Cartridge_wheel_PID_Calc(Cartridge_Fast);
-						else
-							Cartridge_wheel_PID_Calc(Cartridge_Slow);
-						Motor_Output[Cartridge]=Cartridge_wheel.output;
-					break;
-					
-					case 3:		//Slow
-						if(Heat_Rest>20)
-						{
-							Cartridge_wheel_PID_Calc(Cartridge_Slow);
-							Motor_Output[Cartridge]=Cartridge_wheel.output;
-						}
-						else
-						{
-							Cartridge_wheel_PID_Calc(0);
-							Motor_Output[Cartridge]=0;
-						}
-					break;
-					
-					default:
-						Cartridge_wheel_PID_Calc(0);
-						Motor_Output[Cartridge]=0;
-					break;
-				}
+				Ka_Dan=true;
+				Ka_Dan_cnt=400;
+				Buzzer_Short(1);
 			}
-			
-			if(Motor_Output[Cartridge]>9500 && Ka_Dan==false)
+		}
+		else if(Ka_Dan==true)
+		{
+			--Ka_Dan_cnt;
+			if(Ka_Dan_cnt!=0)
 			{
-				++Ka_Dan_cnt;
-				if(Ka_Dan_cnt>400)
-				{
-					Ka_Dan=true;
-					Ka_Dan_cnt=400;
-					Buzzer_Short(1);
-				}
-			}
-			else if(Ka_Dan==true)
-			{
-				--Ka_Dan_cnt;
-				if(Ka_Dan_cnt!=0)
-				{
-					Cartridge_wheel_PID_Calc(-Cartridge_Fast);
-					Motor_Output[Cartridge]=Cartridge_wheel.output;
-				}
-				else
-					Ka_Dan=false;
+				Cartridge_wheel_PID_Calc(-Cartridge_Fast);
+				Motor_Output[Cartridge]=Cartridge_wheel.output;
 			}
 			else
-				Ka_Dan_cnt=0;
+				Ka_Dan=false;
 		}
 		else
+			Ka_Dan_cnt=0;
+	}
+	else
+	{
+		Cartridge_wheel_PID_Calc(0);
+		Motor_Output[Cartridge]=0;
+	}
+	
+	if(TIM1_cnt%2==0)		//2 freq div
+	{
+		CAN_Motor_Ctrl(&hcan2,Motor_Output);
+		
+		uint8_t Data[8]={0};
+		Data[0]=is_red_or_blue();		//红蓝方 视觉需求
+		Data[1]=Hit_Gimbal;		//云台规避
+		
+		#ifdef Test_Mode
+			Set_Game_Start();
+		#endif
+		if(GameState.game_progress==4)	//比赛开始
+			Data[2]=true;
+		else
 		{
-			Cartridge_wheel_PID_Calc(0);
-			Motor_Output[Cartridge]=0;
+			Data[2]=false;
+			Field_Event_Data.Outpost_Alive=true;
+			Field_Event_Data.Base_Shield_Existence=true;
 		}
 		
-		if(TIM1_cnt%2==0)		//2 freq div
-		{
-			CAN_Motor_Ctrl(&hcan2,Motor_Output);
-			
-			uint8_t Data[8]={0};
-			Data[0]=is_red_or_blue();		//红蓝方 视觉需求
-			Data[1]=Hit_Gimbal;		//云台规避
-			
-			#ifdef Test_Mode
-				Set_Game_Start();
-			#endif
-			if(GameState.game_progress==4)	//比赛开始
-				Data[2]=true;
+		#ifdef Test_Mode
+			Set_Outpost_Alive();
+		#endif
+		Data[3]=Field_Event_Data.Outpost_Alive;	//前哨站存活状态
+		
+		#ifdef Test_Mode
+			Set_Base_Shield_Existence();
+		#endif
+		Data[4]=Field_Event_Data.Base_Shield_Existence;	//基地护盾
+
+		#warning	//wait for test
+		#ifndef Test_Mode
+			if(BulletRemaining.bullet_remaining_num_17mm==0)	//500发		Shootable
+				Data[5]=false;
 			else
-			{
-				Data[2]=false;
-				Field_Event_Data.Outpost_Alive=true;
-				Field_Event_Data.Base_Shield_Existence=true;
-			}
-			
-			#ifdef Test_Mode
-				Set_Outpost_Alive();
-			#endif
-			Data[3]=Field_Event_Data.Outpost_Alive;	//前哨站存活状态
-			
-			#ifdef Test_Mode
-				Set_Base_Shield_Existence();
-			#endif
-			Data[4]=Field_Event_Data.Base_Shield_Existence;	//基地护盾
+		#endif
+			Data[5]=true;
+		
+		CAN_Send_Gimbal(&hcan1,Data,6);
 
-			#warning	//wait for test
-			#ifndef Test_Mode
-				if(Shoot_cnt>=500)	//500发		Shootable
-					Data[5]=false;
-				else
-			#endif
-				Data[5]=true;
-			
-			CAN_Send_Gimbal(&hcan1,Data,6);
-
-			if(Inspect_Position!=0)
-			{
-				uint8_t Data_Gimbal2[8]={0};
-				Data_Gimbal2[0]=Inspect_Position;
-				memcpy(&Data_Gimbal2[1],&Target_Angle,sizeof(float));
-				if(CAN_Send_Gimbal2(&hcan1,Data_Gimbal2,1+sizeof(float))==HAL_OK)
-					Inspect_Position=0;
-			}
+		if(Inspect_Position!=0)
+		{
+			/*	0 Normal
+				 *	1-4 Quadrant
+				 *	5 Front
+				 *	6 Back
+				*/
+			uint8_t Data_Gimbal2[8]={0};
+			Data_Gimbal2[0]=Inspect_Position;
+			memcpy(&Data_Gimbal2[1],&Target_Angle,sizeof(float));
+			if(CAN_Send_Gimbal2(&hcan1,Data_Gimbal2,1+sizeof(float))==HAL_OK)	//send success clean flag
+				Inspect_Position=0;
 		}
 	}
   /* USER CODE END TIM1_UP_TIM10_IRQn 1 */

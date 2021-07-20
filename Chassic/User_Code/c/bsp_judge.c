@@ -37,29 +37,29 @@ void Check_Being_Hit(void)	//受到伤害加速
 	{
 		if(	PowerHeatData.chassis_power_buffer>30 &&	//缓冲能量判断
 				Changing_Speed_Flag==0 &&		//边缘判断
-				Measuer_State==End_Measure &&
+				Measuer_State==End_Measure &&	//Got rail len
 				(Rail_Position>0.2f && Rail_Position<0.8f) &&	//rail position
 				Classic_Move_Speed==Chassic_Spring_Middle &&	//被击打加速判断
 				Hit_Random_CD_cnt==0 &&
-				Being_Hit==0 &&
+				Being_Hit==0 &&	//not at speed up state
 				rand()%2==0)	//50%概率 变向
 		{
-			Rand_cnt=(uint32_t)(Random(0.5,3)*400);
+			Rand_cnt=(uint32_t)(Random(0.5,3)*400);	//new a rand change direction time
 			Hit_Random_CD_cnt=Hit_Random_CD;
-			direction=-direction;
+			direction=-direction;	
 			Last_Dir=direction;
 			Buzzer_Short(1);
-			Hurt_Data_Update=false;
+			Hurt_Data_Update=false;	//clean flag
 			return;
 		}
 		if(Being_Hit==0)	//加速
 		{
 			Hit_Random_CD_cnt=Hit_Random_CD;
 			Being_Hit=1;
-			Rand_Speed_Up_Init();
-			if(PowerHeatData.chassis_power_buffer>75)
+			Rand_Speed_Up_Init();	//rand speed up time
+			if(PowerHeatData.chassis_power_buffer>75)	//enough power
 			{
-				if(Classic_Move_Speed==Chassic_Spring_Middle)
+				if(Classic_Move_Speed==Chassic_Spring_Middle)	//in normal speed, not at aim and speed up 
 				{
 					Classic_Move_Speed=Chassic_Spring_Fast;
 					Buzzer_Short(1);
@@ -78,20 +78,6 @@ void Check_Being_Hit(void)	//受到伤害加速
 			if(Classic_Move_Speed==Chassic_Spring_Fast)
 				Classic_Move_Speed=Chassic_Spring_Middle;	//恢复巡检速度
 		}
-	}
-}
-
-bool Rand_Change_Flag=false;
-void Rand_Dir_Change(void)
-{
-	if(	PowerHeatData.chassis_power_buffer>30 &&	//缓冲能量判断
-			Changing_Speed_Flag==0 &&		//边缘判断
-			Classic_Move_Speed==Chassic_Spring_Middle &&	//被击打加速判断
-			rand()%4==0)	//25%概率
-	{
-		direction=-direction;
-		Last_Dir=direction;
-		Buzzer_Short(1);
 	}
 }
 
@@ -218,99 +204,109 @@ void Rand_Dir_Time(void)
 	if(Rail_Position>0.2f && Rail_Position<0.8f)
 	{
 		--Rand_cnt;
-		if(Rand_cnt==0 &&
-			 Changing_Speed_Flag==0 &&
-			 Classic_Move_Speed==Chassic_Spring_Middle &&
-			 PowerHeatData.chassis_power_buffer>30)
+		if(Rand_cnt==0 &&	//time cnt complete
+			 Changing_Speed_Flag==0 &&	//not changing speed
+			 Classic_Move_Speed==Chassic_Spring_Middle &&	//in normal speed , not speed up and aim
+			 PowerHeatData.chassis_power_buffer>30)	//enough power
 		{
-			direction=-direction;
+			direction=-direction;	//change speed direction
 			Last_Dir=direction;
 			Buzzer_Short(1);
 		}
 		if(Rand_cnt==0)
-			Rand_cnt=(uint32_t)(Random(0.5,3)*400);
+			Rand_cnt=(uint32_t)(Random(0.5,3)*400);	//new a rand number
 	}
 }
 
 float Target_Angle=0;
+bool Select_Guard=false;
 #define Red_Guard_Position_X 5.42f
 #define Red_Guard_Position_Y 8.44f
 #define Blue_Guard_Position_X 22.71f
 #define Blue_Guard_Position_Y 8.26f
 void Robot_Command_Receive(void)
 {
-	if(Robot_Command.target_robot_ID!=7 && Robot_Command.target_robot_ID!=107)
-		return;
-	
-	//Quadrant
-	if(is_red_or_blue()==RED)
+	if(Robot_Command.target_position_x==0 && Robot_Command.target_position_y==0 && Robot_Command.target_position_z==0)
 	{
-		if(Robot_Command.target_position_x>Red_Guard_Position_X && Robot_Command.target_position_y<=Red_Guard_Position_Y)
-			Inspect_Position=1;
-		else if(Robot_Command.target_position_x>Red_Guard_Position_X && Robot_Command.target_position_y>Red_Guard_Position_Y)
-			Inspect_Position=2;
-		else if(Robot_Command.target_position_x<=Red_Guard_Position_X && Robot_Command.target_position_y>Red_Guard_Position_Y)
-			Inspect_Position=3;
-		else if(Robot_Command.target_position_x<=Red_Guard_Position_X && Robot_Command.target_position_y<=Red_Guard_Position_Y)
-			Inspect_Position=4;
+		if(is_red_or_blue()==RED && Robot_Command.target_robot_ID==7)
+			Select_Guard=true;
+		else if(is_red_or_blue()==BLUE && Robot_Command.target_robot_ID==107)
+			Select_Guard=true;
+		else
+			Select_Guard=false;
 	}
-	else
+	else if(Select_Guard==true)
 	{
-		if(Robot_Command.target_position_x<=Blue_Guard_Position_X && Robot_Command.target_position_y>Blue_Guard_Position_Y)
-			Inspect_Position=1;
-		else if(Robot_Command.target_position_x<=Blue_Guard_Position_X && Robot_Command.target_position_y<=Blue_Guard_Position_Y)
-			Inspect_Position=2;
-		else if(Robot_Command.target_position_x>Blue_Guard_Position_X && Robot_Command.target_position_y<=Blue_Guard_Position_Y)
-			Inspect_Position=3;
-		else if(Robot_Command.target_position_x>Blue_Guard_Position_X && Robot_Command.target_position_y>Blue_Guard_Position_Y)
-			Inspect_Position=4;
-	}
-	
-	//Angle
-	if(is_red_or_blue()==RED)	//arctan dead area
-	{
-		if(Robot_Command.target_position_y==Red_Guard_Position_Y)
+		//Quadrant
+		if(is_red_or_blue()==RED)
 		{
-			if(Robot_Command.target_position_x>Red_Guard_Position_X)
-				Target_Angle=90;
-			else
-				Target_Angle=270;
-			return;
+			if(Robot_Command.target_position_x>Red_Guard_Position_X && Robot_Command.target_position_y<=Red_Guard_Position_Y)
+				Inspect_Position=1;
+			else if(Robot_Command.target_position_x>Red_Guard_Position_X && Robot_Command.target_position_y>Red_Guard_Position_Y)
+				Inspect_Position=2;
+			else if(Robot_Command.target_position_x<=Red_Guard_Position_X && Robot_Command.target_position_y>Red_Guard_Position_Y)
+				Inspect_Position=3;
+			else if(Robot_Command.target_position_x<=Red_Guard_Position_X && Robot_Command.target_position_y<=Red_Guard_Position_Y)
+				Inspect_Position=4;
 		}
-	}
-	else
-	{
-		if(Robot_Command.target_position_y==Blue_Guard_Position_Y)
+		else
 		{
-			if(Robot_Command.target_position_x<Blue_Guard_Position_X)
-				Target_Angle=90;
-			else
-				Target_Angle=270;
-			return;
+			if(Robot_Command.target_position_x<=Blue_Guard_Position_X && Robot_Command.target_position_y>Blue_Guard_Position_Y)
+				Inspect_Position=1;
+			else if(Robot_Command.target_position_x<=Blue_Guard_Position_X && Robot_Command.target_position_y<=Blue_Guard_Position_Y)
+				Inspect_Position=2;
+			else if(Robot_Command.target_position_x>Blue_Guard_Position_X && Robot_Command.target_position_y<=Blue_Guard_Position_Y)
+				Inspect_Position=3;
+			else if(Robot_Command.target_position_x>Blue_Guard_Position_X && Robot_Command.target_position_y>Blue_Guard_Position_Y)
+				Inspect_Position=4;
 		}
-	}
-	float dif_x=Robot_Command.target_position_x-Blue_Guard_Position_X;
-	float dif_y=Robot_Command.target_position_y-Blue_Guard_Position_Y;
-	switch(Inspect_Position)
-	{
-		case 1:
-			Target_Angle=atan(-dif_x/dif_y);
-		break;
 		
-		case 2:
-			Target_Angle=atan(dif_y/dif_x)+90;
-		break;
-		
-		case 3:
-			Target_Angle=atan(dif_x/-dif_y)+180;
-		break;
-		
-		case 4:
-			Target_Angle=atan(dif_y/dif_x)+270;
-		break;
-		
-		default:
-			Target_Angle=45.f;
-		break;
+		//Angle
+		if(is_red_or_blue()==RED)	//arctan dead area
+		{
+			if(Robot_Command.target_position_y==Red_Guard_Position_Y)
+			{
+				if(Robot_Command.target_position_x>Red_Guard_Position_X)
+					Target_Angle=90;
+				else
+					Target_Angle=270;
+				return;
+			}
+		}
+		else
+		{
+			if(Robot_Command.target_position_y==Blue_Guard_Position_Y)
+			{
+				if(Robot_Command.target_position_x<Blue_Guard_Position_X)
+					Target_Angle=90;
+				else
+					Target_Angle=270;
+				return;
+			}
+		}
+		float dif_x=Robot_Command.target_position_x-Blue_Guard_Position_X;
+		float dif_y=Robot_Command.target_position_y-Blue_Guard_Position_Y;
+		switch(Inspect_Position)
+		{
+			case 1:
+				Target_Angle=atan(-dif_x/dif_y);
+			break;
+			
+			case 2:
+				Target_Angle=atan(dif_y/dif_x)+90;
+			break;
+			
+			case 3:
+				Target_Angle=atan(dif_x/-dif_y)+180;
+			break;
+			
+			case 4:
+				Target_Angle=atan(dif_y/dif_x)+270;
+			break;
+			
+			default:
+				Target_Angle=45.f;
+			break;
+		}
 	}
 }

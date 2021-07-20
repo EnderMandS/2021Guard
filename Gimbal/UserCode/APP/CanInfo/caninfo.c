@@ -123,7 +123,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 				Base_Shield=rx_data[4];
 				Shootable=rx_data[5];
 
-				Limit_Yaw=Outpost_Alive;	//Outpost not alive, don't limit yaw
+				Limit_Yaw=Base_Shield;		//Base_Shield_Existence
+				// Limit_Yaw=Outpost_Alive;	//Outpost not alive, don't limit yaw
 			break;
 					
 			case 0x1BB:
