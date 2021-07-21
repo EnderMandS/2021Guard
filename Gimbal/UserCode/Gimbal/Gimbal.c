@@ -281,11 +281,13 @@ void Gimbal_Remote_Control(void)
 	pitch = Control_PitchPID(pitch_angle);
 }
 
+#define Gimbal_Force_Time 400	//云台手强制控制 400Hz
+uint16_t Gimbal_Force_Time_cnt=Gimbal_Force_Time;
 void Gimbal_Automatic_control(void)
 {
-	if(control_allow == 1)
+	if(control_allow==1)
 	{
-		if(Aimming == 1)
+		if(Aimming==1 && Gimbal_Force_Time_cnt>=Gimbal_Force_Time)	//
 		{
 			float pre_yaw;
 			vision_target_yaw += yaw_det_average * 50.0f * 0.005f;
@@ -332,7 +334,7 @@ void Gimbal_Automatic_control(void)
 			{
 				pitch_angle = vision_target_pitch;
 			}
-			
+
 			if(Pitch_USE_Gyro==true)
 			{
 				Limit(pitch_angle, Pitch_Gyro_Bottom, Pitch_Gyro_Top);
@@ -347,10 +349,9 @@ void Gimbal_Automatic_control(void)
 		}
 		else
 		{
-//			if(Inspect_Position==0)
-//				Gimbal_Inspect();
-//			else
-				Gimbal_Position_Inspect();
+			if(Gimbal_Force_Time_cnt<Gimbal_Force_Time)
+				++Gimbal_Force_Time_cnt;
+			Gimbal_Position_Inspect();
 		}
 	}
 }
@@ -738,32 +739,7 @@ void Gimbal_Position_Inspect(void)
 	else
 	{
 		--Angle_Stay;
-		if(Inspect_Angle>=0 && Inspect_Angle<90)
-		{
-			if(Inspect_Angle<12.9f)
-				Inspect_Angle=12.9f;
-			else
-				Inspect_Angle=Yaw_Front_Middle+90-Inspect_Angle;
-		}
-		else if(Inspect_Angle>=90 && Inspect_Angle<180)
-		{
-			Inspect_Angle=Yaw_Front_Middle-(Inspect_Angle-90);
-			if(Inspect_Angle<Yaw_Limit_Min)
-				Inspect_Angle=Yaw_Limit_Min;
-		}
-		else if(Inspect_Angle>=180 && Inspect_Angle<270)
-		{
-			Inspect_Angle=270-Inspect_Angle+Yaw_Back_Middle;
-			if(Inspect_Angle>191)
-				Inspect_Angle=191;
-		}
-		else
-		{
-			Inspect_Angle=Yaw_Back_Middle-(Inspect_Angle-270);
-			if(Inspect_Angle<44.6f)
-				Inspect_Angle=44.6f;
-		}
-		yaw_angle=Inspect_Angle;
+		Gimbal_Force_Control();
 	}
 	yaw_angle = loop_fp32_constrain(yaw_angle,0,360);
 	yaw = Control_YawPID(yaw_angle);
@@ -771,6 +747,37 @@ void Gimbal_Position_Inspect(void)
 	if(Yaw_dir!=Last_Yaw_Dir && Position_Inspect_cnt>0)
 		--Position_Inspect_cnt;
 	Last_Yaw_Dir=Yaw_dir;
+}
+
+void Gimbal_Force_Control(void)	//云台手控制,最高优先级
+{
+	if(Inspect_Angle>=0 && Inspect_Angle<90)	//云台坐标系转换
+	{
+		if(Inspect_Angle<12.9f)
+			Inspect_Angle=12.9f;
+		else
+			Inspect_Angle=Yaw_Front_Middle+90-Inspect_Angle;
+	}
+	else if(Inspect_Angle>=90 && Inspect_Angle<180)
+	{
+		Inspect_Angle=Yaw_Front_Middle-(Inspect_Angle-90);
+		if(Inspect_Angle<Yaw_Limit_Min)
+			Inspect_Angle=Yaw_Limit_Min;
+	}
+	else if(Inspect_Angle>=180 && Inspect_Angle<270)
+	{
+		Inspect_Angle=270-Inspect_Angle+Yaw_Back_Middle;
+		if(Inspect_Angle>191)
+			Inspect_Angle=191;
+	}
+	else
+	{
+		Inspect_Angle=Yaw_Back_Middle-(Inspect_Angle-270);
+		if(Inspect_Angle<44.6f)
+			Inspect_Angle=44.6f;
+	}
+	yaw_angle=Inspect_Angle;
+	yaw_angle=loop_fp32_constrain(yaw_angle,0,360);
 }
 
 float Yaw_Motor_Angle_Change(void)

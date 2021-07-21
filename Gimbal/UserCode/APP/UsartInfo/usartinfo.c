@@ -68,11 +68,8 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 				case 0xAA:
 					view_send_state = 1;
 					Aimming = 0;
-					
 					if(Slow_Inspect_Speed==0)
-					{
 						Gimbal_Inspect_setSpeed(Gimbal_Inspect_SPEED_FAST);
-					}
 					else
 						--Slow_Inspect_Speed;
 					break;
@@ -93,14 +90,16 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 					view_send_state = 3;
 					Aimming = 1;
 					Slow_Inspect_Speed=Slow_Time;
-					if(Shot_Stay_Time!=0)	//持续Shot_State_Stay_Time*20ms
+					if(Shot_Stay_Time!=0)	//持续Shot_State_Stay_Time*20ms 50Hz
 						--Shot_Stay_Time;
-					if(rx_view_buf[2]==0xEE || rx_view_buf[2]==0xFF)
+					
+					if(rx_view_buf[2]==0xEE || rx_view_buf[2]==0xFF)	//拨弹保持时间
 						Shot_Stay_Time=Shot_State_Stay_Time;
 					if(Shot_Stay_Time!=0)
 						view_shoot_mode=0xEE;	//high
 					else
 						view_shoot_mode=0xDD;	//none
+					
 					break;
 				
 				default:

@@ -154,6 +154,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 				}
 				memcpy(&Inspect_Angle,&rx_data[1],sizeof(float));
 				Angle_Stay=Angle_Stay_Time;
+				Gimbal_Force_Time_cnt=0;	//云台手强制控制
 				Buzzer_Short(1);
 			break;
 			

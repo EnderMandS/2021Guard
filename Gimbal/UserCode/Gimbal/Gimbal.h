@@ -9,7 +9,7 @@
 #define Soft_Start_Up_Error 0.5f
 #define pitch_center ((Pitch_Motor_Zero+Pitch_Limit_Bottom)/2.f)
 
-#define Angle_Stay_Time 400		//400Hz
+#define Angle_Stay_Time 450		//400Hz
 #define Position_Inspect_Time 5
 #define Front_Back_Time 2
 
@@ -32,6 +32,7 @@ extern bool Limit_Yaw;
 extern uint8_t Position_Inspect_cnt;
 extern float Inspect_Angle;
 extern uint32_t Angle_Stay;
+extern uint16_t Gimbal_Force_Time_cnt;
 
 void Gimbal_Sotf_Start(void);
 void Gimbal_Remote_Control(void);
@@ -45,6 +46,7 @@ float loop_fp32_constrain(float Input, float minValue, float maxValue);
 float Zero_Offset_Cal(void);
 bool Gimbal_Keep_Middle(void);
 void Gimbal_Position_Inspect(void);
+void Gimbal_Force_Control(void);
 
 extern void Gimbal_Automatic_target(float _pitch,float _yaw);
 extern void Gimbal_Automatic_target_lost(void);
