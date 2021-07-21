@@ -105,14 +105,14 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-	srand(0xCC);
-	Bsp_UART_Receive_IT(&huart6,Judgement_Buf,JUDGEMENT_BUF_LEN);
-	CAN_Filter_Init();
-	Chassis_init();
-	gear_moto_position_pid_init();
+	srand(0xCC); //随机数种子初始化
+	Bsp_UART_Receive_IT(&huart6,Judgement_Buf,JUDGEMENT_BUF_LEN); //裁判系统串口
+	CAN_Filter_Init();  //can总线初始化
+	Chassis_init();   //底盘PID初始化
+	gear_moto_position_pid_init();  //拨弹PID初始化
   Rand_Speed_Up_Init();   //Init random speed up time
 	HAL_TIM_Base_Start_IT(&htim1);	// 400Hz
-	Buzzer_Init();
+	Buzzer_Init();  //蜂鸣器初始化
 	HAL_TIM_Base_Start_IT(&htim6);	// 1kHz
   /* USER CODE END 2 */
 

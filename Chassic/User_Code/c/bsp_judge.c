@@ -227,15 +227,11 @@ bool Select_Guard=false;
 void Robot_Command_Receive(void)
 {
 	if(Robot_Command.target_position_x==0 && Robot_Command.target_position_y==0 && Robot_Command.target_position_z==0)
-	{
-		if(is_red_or_blue()==RED && Robot_Command.target_robot_ID==7)
-			Select_Guard=true;
-		else if(is_red_or_blue()==BLUE && Robot_Command.target_robot_ID==107)
-			Select_Guard=true;
-		else
-			Select_Guard=false;
-	}
-	else if(Select_Guard==true)
+		Select_Guard=false;
+	else if(Robot_Command.target_robot_ID==0)
+		Select_Guard=true;
+	
+	if(Select_Guard==true)
 	{
 		//Quadrant
 		if(is_red_or_blue()==RED)
@@ -284,24 +280,35 @@ void Robot_Command_Receive(void)
 				return;
 			}
 		}
-		float dif_x=Robot_Command.target_position_x-Blue_Guard_Position_X;
-		float dif_y=Robot_Command.target_position_y-Blue_Guard_Position_Y;
+		
+		float dif_x=0;
+		float dif_y=0;
+		if(is_red_or_blue()==RED)
+		{
+			dif_x=Robot_Command.target_position_x-Red_Guard_Position_X;
+			dif_y=Robot_Command.target_position_y-Red_Guard_Position_Y;
+		}
+		else
+		{
+			dif_x=Robot_Command.target_position_x-Blue_Guard_Position_X;
+			dif_y=Robot_Command.target_position_y-Blue_Guard_Position_Y;
+		}
 		switch(Inspect_Position)
 		{
 			case 1:
-				Target_Angle=atan(-dif_x/dif_y);
+				Target_Angle=atan(-dif_x/dif_y)/(PI/2.f)*90;
 			break;
 			
 			case 2:
-				Target_Angle=atan(dif_y/dif_x)+90;
+				Target_Angle=atan(dif_y/dif_x)/(PI/2.f)*90+90;
 			break;
 			
 			case 3:
-				Target_Angle=atan(dif_x/-dif_y)+180;
+				Target_Angle=atan(dif_x/-dif_y)/(PI/2.f)*90+180;
 			break;
 			
 			case 4:
-				Target_Angle=atan(dif_y/dif_x)+270;
+				Target_Angle=atan(dif_y/dif_x)/(PI/2.f)*90+270;
 			break;
 			
 			default:

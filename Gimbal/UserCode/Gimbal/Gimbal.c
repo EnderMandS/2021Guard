@@ -738,6 +738,31 @@ void Gimbal_Position_Inspect(void)
 	else
 	{
 		--Angle_Stay;
+		if(Inspect_Angle>=0 && Inspect_Angle<90)
+		{
+			if(Inspect_Angle<12.9f)
+				Inspect_Angle=12.9f;
+			else
+				Inspect_Angle=Yaw_Front_Middle+90-Inspect_Angle;
+		}
+		else if(Inspect_Angle>=90 && Inspect_Angle<180)
+		{
+			Inspect_Angle=Yaw_Front_Middle-(Inspect_Angle-90);
+			if(Inspect_Angle<Yaw_Limit_Min)
+				Inspect_Angle=Yaw_Limit_Min;
+		}
+		else if(Inspect_Angle>=180 && Inspect_Angle<270)
+		{
+			Inspect_Angle=270-Inspect_Angle+Yaw_Back_Middle;
+			if(Inspect_Angle>191)
+				Inspect_Angle=191;
+		}
+		else
+		{
+			Inspect_Angle=Yaw_Back_Middle-(Inspect_Angle-270);
+			if(Inspect_Angle<44.6f)
+				Inspect_Angle=44.6f;
+		}
 		yaw_angle=Inspect_Angle;
 	}
 	yaw_angle = loop_fp32_constrain(yaw_angle,0,360);

@@ -84,11 +84,11 @@ int16_t Max_Speed=0;
 uint32_t Dir_Change_Wait_Cnt=0;
 void Spring(int dir,uint16_t Speed)
 {
-	if(dir!=Last_Dir)
+	if(dir!=Last_Dir)	//速度改变
 	{
 		if(Last_Dir==1)
 		{
-			if(gear_motor_data[Moto_ID[0]].speed_rpm>0)
+			if(gear_motor_data[Moto_ID[0]].speed_rpm>0)	//电机给0,等待弹簧反弹
 			{
 				for (uint8_t i=0; i<2; i++)
 				{
@@ -106,7 +106,7 @@ void Spring(int dir,uint16_t Speed)
 		}
 		else if(Last_Dir==-1)
 		{
-			if(gear_motor_data[Moto_ID[0]].speed_rpm<0)
+			if(gear_motor_data[Moto_ID[0]].speed_rpm<0)	//电机给0,等待弹簧反弹
 			{
 				for(uint8_t i=0; i<2; i++)
 				{
@@ -125,23 +125,23 @@ void Spring(int dir,uint16_t Speed)
 	}
 	else
 	{
-		if(Dir_Change_Wait==true)
+		if(Dir_Change_Wait==true)	//等待弹簧弹性势能释放
 		{
 			++Dir_Change_Wait_Cnt;
-			if(Dir_Change_Wait_Cnt>=Wait_Cnt)
+			if(Dir_Change_Wait_Cnt>=Wait_Cnt)	//最多等待1s, 超时继续移动
 			{
 				Dir_Change_Wait_Cnt=0;
 				Dir_Change_Wait=false;
 			}
 			if( abs(gear_motor_data[Moto_ID[0]].speed_rpm) > abs(Max_Speed) )
 				Max_Speed=gear_motor_data[Moto_ID[0]].speed_rpm;
-			else if( abs(gear_motor_data[Moto_ID[0]].speed_rpm) < abs(Max_Speed)-200 )
+			else if( abs(gear_motor_data[Moto_ID[0]].speed_rpm) < abs(Max_Speed)-200 )	//弹性势能完全释放,速度开始下降,电机给电
 			{
 				Dir_Change_Wait_Cnt=0;
 				Dir_Change_Wait=false;
 			}
 		}
-		else
+		else	//正常移动PID计算
 		{
 			for (uint8_t i=0; i<2; i++)
 			{
@@ -153,58 +153,58 @@ void Spring(int dir,uint16_t Speed)
 	}
 }
 
-#define Sample_Times 6
-uint8_t Measuer_State=Ready_Measure;
-uint32_t Rail_Len=0;
-uint32_t Rail_Len_Buff[Sample_Times]={0};
-uint16_t Rail_Len_Buff_cnt=0;
+#define Sample_Times 6	//采样次数,实际使用5次数据,第一次数据不是在轨道边缘开始采样舍弃
+uint8_t Measuer_State=Ready_Measure;	//采样状态
+uint32_t Rail_Len=0;	//轨道长度
+uint32_t Rail_Len_Buff[Sample_Times]={0};	//轨道长度缓冲区
+uint16_t Rail_Len_Buff_cnt=0;	//采样次数计数值
 void Measuer_Rail_Len(void)
 {
-	if(Measuer_State==End_Measure)
+	if(Measuer_State==End_Measure)	//完成测量,退出函数
 		return;
-	if(direction!=Last_Dir)
+	if(direction!=Last_Dir)	//速度反向,已经走完轨道一次
 	{
-		if(Measuer_State==Measuring)
+		if(Measuer_State==Measuring)	//测量中
 		{
-			Rail_Len_Buff[Rail_Len_Buff_cnt]=abs(gear_motor_data[Moto_ID[0]].round_cnt);
+			Rail_Len_Buff[Rail_Len_Buff_cnt]=abs(gear_motor_data[Moto_ID[0]].round_cnt);	//写入缓冲区
 			++Rail_Len_Buff_cnt;
-			if(Rail_Len_Buff_cnt!=Sample_Times)
+			if(Rail_Len_Buff_cnt!=Sample_Times)	//没有采样完成
 			{
-				Measuer_State=Ready_Measure;
+				Measuer_State=Ready_Measure;	//准备下次计数
 			}
 			else
 			{
-				uint32_t sum=0;
-				for(uint8_t i=1; i<Sample_Times; ++i)
+				uint32_t sum=0;	//采样完成,多次取平均
+				for(uint8_t i=1; i<Sample_Times; ++i)	//第一次数据舍弃
 					sum += Rail_Len_Buff[i];
-				Rail_Len = sum/Sample_Times;
-				Measuer_State=End_Measure;
+				Rail_Len = sum/(Sample_Times-1);
+				Measuer_State=End_Measure;	//置测量完成标志位
 			}
 		}
 	}
-	else
+	else	//没有触发弹簧,正常移动
 	{
-		if(Measuer_State==Ready_Measure)
+		if(Measuer_State==Ready_Measure)	//准备下一次测量,圈数清零
 		{
 			gear_motor_data[Moto_ID[0]].round_cnt=0;
 			gear_motor_data[Moto_ID[1]].round_cnt=0;
-			Measuer_State=Measuring;
+			Measuer_State=Measuring;	//置测量中标志位
 		}
 	}
 }
-void Go_To_Middle(uint16_t Speed)	//回到轨道中间
+void Go_To_Middle(uint16_t Speed)	//回到轨道中间	0.4-0.6
 {
 	int dir=0;
-	if(Rail_Position<0.4f)
+	if(Rail_Position<0.4f)	//判断位置,确定移动方向
 		dir=-1;
 	else if(Rail_Position>0.6f)
 		dir=1;
-	for (uint8_t i=0; i<2; i++)
+	for (uint8_t i=0; i<2; i++)	//pid计算
 	{
 		motor_pid[i].target=dir*Speed;
 		motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
 	}
-	if(dir!=0)
+	if(dir!=0)	//方向为0,不给输出
 	{
 		for (uint8_t i=0; i<2; i++)
 			Motor_Output[ Moto_ID[i] ]=motor_pid[i].output;

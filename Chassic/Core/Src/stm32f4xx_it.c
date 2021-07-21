@@ -54,13 +54,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-int32_t Fric_Speed=-0;
 uint32_t Time_Tick=0;	//计时，一秒内没有收到云台数据停止动作
 uint8_t Motor_Power_Up=0;	//判断电机上电，1上电完成
 uint8_t Shoot_Ultra_Mode=1;	//剩余热量多，高射速消耗热量，1有效
-int Heat_Rest=0;
-float Rail_Position=0.f;
-bool Hit_Gimbal=false;
+int Heat_Rest=0;	//热量剩余,中断更新
+float Rail_Position=0.f;	//轨道位置,中断更新
+bool Hit_Gimbal=false;	//云台撞柱
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -257,17 +256,17 @@ void CAN1_RX0_IRQHandler(void)
 void TIM1_UP_TIM10_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 0 */
-	static uint32_t TIM1_cnt=0;
+	static uint32_t TIM1_cnt=0;	//can分频用
 	++TIM1_cnt;
 	if(TIM1_cnt==0xFFFFFFFF)
 		TIM1_cnt=0;
 	
-	static uint32_t Ka_Dan_cnt=0;
-	static bool Ka_Dan=false;
+	static uint32_t Ka_Dan_cnt=0;	//卡弹时间计数
+	static bool Ka_Dan=false;	//卡单标志位
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
-	if(Motor_Power_Up==0)
+	if(Motor_Power_Up==0)	//电机没上电,蜂鸣器响
 	{
 		if(	gear_motor_data[Chassic_L].real_current!=0 &&
 				gear_motor_data[Chassic_R].real_current!=0 &&
@@ -278,12 +277,12 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	}
 
 	++Time_Tick;	//Time_Tick在CAN接收服务函数中置零
-	if(Time_Tick>200)	//没有云台数据，停止动作
+	if(Time_Tick>200)	//没有云台数据
 	{
-		#ifdef Test_Mode
+		#ifdef Test_Mode	//测试模式	没数据停止
 			Move_Allow=0;
 		#else
-			Move_Allow=1;
+			Move_Allow=1;	//比赛	没数据保持运动
 		#endif
 		Shoot_State=0;
 		Switch_State[0]=Switch_State[1]=1;	//微动开关状态,没用到
@@ -325,7 +324,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	}
 	else if(Changing_Speed_Flag==1)	//Leave check
 	{
-		if(direction==touch_Left)
+		if(direction==touch_Left)	//远离柱子,光电开关不触发,圈数计数清零
 		{
 			if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_SET)
 			{
@@ -346,7 +345,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		}
 	}
 
-	if(Measuer_State==End_Measure)
+	if(Measuer_State==End_Measure)	//轨道测量结束,更新在轨位置
 		Rail_Position=(abs(gear_motor_data[Moto_ID[0]].round_cnt)*1.f)/(Rail_Len*1.f);
 	
 	switch (Move_Allow)
@@ -363,13 +362,13 @@ void TIM1_UP_TIM10_IRQHandler(void)
 						Rand_Dir_Time();
 					}
 				}
-				Spring(direction,Classic_Move_Speed);
+				Spring(direction,Classic_Move_Speed);	//处理弹簧反弹和底盘PID计算
 			break;
 		}
 		
 		case 2:	//获取轨道长度
 		{
-			if(Measuer_State!=End_Measure)
+			if(Measuer_State!=End_Measure)	//没有测量完成,正常移动
 			{
 				Spring(direction,Classic_Move_Speed);
 				Measuer_Rail_Len();
@@ -381,12 +380,12 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			break;
 		}
 		
-		case 3:		//回到轨道中间
+		case 3:		//回到轨道中间 这个case暂时没有使用
 			if(Measuer_State==End_Measure)
 				Go_To_Middle(Chassic_Spring_Slow);
 			else
 			{
-				motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,0);
+				motor_pid[0].target=motor_pid[1].target=Slow_Change_Speed(direction,0);	//缓慢减速
 				for(uint8_t i=0; i<2; ++i)
 				{
 					motor_pid[i].f_cal_pid(&motor_pid[i], gear_motor_data[ Moto_ID[i] ].speed_rpm);
@@ -419,7 +418,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		{
 			switch(Shoot_State)	//射击模式
 			{
-				case 1:		//Single
+				case 1:		//Single	单发位置环 没有使用 保留代码
 					if(Heat_Rest>20)
 					{
 						Shoot_State=0;
@@ -434,9 +433,9 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				break;
 				
 				case 2:		//Fast
-					if(Shoot_Ultra_Mode==1)
+					if(Shoot_Ultra_Mode==1)	//剩余热量多,高射频
 						Cartridge_wheel_PID_Calc(Cartridge_Ultra);
-					else if(Heat_Rest>50)
+					else if(Heat_Rest>50)	//较少,低射频
 						Cartridge_wheel_PID_Calc(Cartridge_Fast);
 					else
 						Cartridge_wheel_PID_Calc(Cartridge_Slow);
@@ -463,17 +462,17 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			}
 		}
 		
-		if(Motor_Output[Cartridge]>9500 && Ka_Dan==false)
+		if(Motor_Output[Cartridge]>9500 && Ka_Dan==false)	//拨弹盘堵转检测
 		{
-			++Ka_Dan_cnt;
+			++Ka_Dan_cnt;	//计数值自加
 			if(Ka_Dan_cnt>400)	//1s 400hz
 			{
-				Ka_Dan=true;
-				Ka_Dan_cnt=400;
+				Ka_Dan=true;	//卡单标志位
+				Ka_Dan_cnt=400;	//反转时间
 				Buzzer_Short(1);
 			}
 		}
-		else if(Ka_Dan==true)
+		else if(Ka_Dan==true)	//卡单反转
 		{
 			--Ka_Dan_cnt;
 			if(Ka_Dan_cnt!=0)
@@ -482,7 +481,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				Motor_Output[Cartridge]=Cartridge_wheel.output;
 			}
 			else
-				Ka_Dan=false;
+				Ka_Dan=false;	//清空标志位
 		}
 		else
 			Ka_Dan_cnt=0;
