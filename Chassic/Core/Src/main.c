@@ -110,7 +110,7 @@ int main(void)
 	CAN_Filter_Init();  //can总线初始化
 	Chassis_init();   //底盘PID初始化
 	gear_moto_position_pid_init();  //拨弹PID初始化
-  Rand_Speed_Up_Init();   //Init random speed up time
+  // Rand_Speed_Up_Init();   //Init random speed up time
 	HAL_TIM_Base_Start_IT(&htim1);	// 400Hz
 	Buzzer_Init();  //蜂鸣器初始化
 	HAL_TIM_Base_Start_IT(&htim6);	// 1kHz

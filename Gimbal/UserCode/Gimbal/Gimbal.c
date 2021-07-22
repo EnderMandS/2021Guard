@@ -302,23 +302,12 @@ void Gimbal_Automatic_control(void)
 				pre_yaw = yaw_angle - 0.1f;
 			}
 			yaw_angle = loop_fp32_constrain(pre_yaw, 0, 360);
-			if(Limit_Yaw==true)
+			if( Hit_Gimbal==true && yaw_angle>195.f && yaw_angle<Yaw_Limit_Min )
 			{
-				float Dead_Zone_Middle=(Yaw_Limit_Min+Yaw_Limit_Max)/2.f;
-				if( yaw_angle>Yaw_Limit_Max && yaw_angle<=Dead_Zone_Middle )
-					yaw_angle=Yaw_Limit_Max;
-				else if( yaw_angle<Yaw_Limit_Min && yaw_angle>Dead_Zone_Middle )
+				if( yaw_angle<(195.f+Yaw_Limit_Min)/2.f )
+					yaw_angle=195.f;
+				else
 					yaw_angle=Yaw_Limit_Min;
-			}
-			else
-			{
-				if( Hit_Gimbal==true && yaw_angle>195.f && yaw_angle<Yaw_Limit_Min )
-				{
-					if( yaw_angle<(195.f+Yaw_Limit_Min)/2.f )
-						yaw_angle=195.f;
-					else
-						yaw_angle=Yaw_Limit_Min;
-				}
 			}
 			yaw = Control_YawPID(yaw_angle);
 

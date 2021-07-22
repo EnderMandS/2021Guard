@@ -10,11 +10,11 @@
 
 #define Classic_Slow		3000	//√È◊º
 #define Classic_Middle	4000	//—≤ºÏ
-#define Classic_Fast		8000	//…¡±‹
+#define Classic_Fast		6000	//…¡±‹
 
 #define Chassic_Spring_Slow		3000
 #define Chassic_Spring_Middle	4000
-#define Chassic_Spring_Fast		8000
+#define Chassic_Spring_Fast		6000
 
 #define Motor_Base 0x201
 typedef enum

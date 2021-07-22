@@ -292,7 +292,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	{
 		if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_RESET)	//左边检测到墙壁，开始反转
 		{
-			eliminate_dithering_right = 0;
+			eliminate_dithering_right = 0;	//清空另一边的消抖计数
 			eliminate_dithering_left++;
 			if (eliminate_dithering_left >= 20) //消抖
 			{
@@ -307,8 +307,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		}
 		else if(HAL_GPIO_ReadPin(REDR_GPIO_Port, REDR_Pin) == GPIO_PIN_RESET)
 		{
-			eliminate_dithering_right++;
-			eliminate_dithering_left = 0;
+			eliminate_dithering_right++;	
+			eliminate_dithering_left = 0;	//清空另一边的消抖计数
 			if (eliminate_dithering_right >= 20)
 			{
 				#ifdef USE_SPRING
@@ -318,7 +318,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				#endif
 				Hit_Gimbal=true;
 				Changing_Speed_Flag=1;	//方向改变，标志位置1
-				Buzzer_Short(1);
+				Buzzer_Short(1);	//蜂鸣器
 			}
 		}
 	}
@@ -329,8 +329,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			if(HAL_GPIO_ReadPin(REDL_GPIO_Port, REDL_Pin) == GPIO_PIN_SET)
 			{
 				Changing_Speed_Flag=0;
-				if(Move_Allow==1)
-					gear_motor_data[Moto_ID[0]].round_cnt=0;
+				gear_motor_data[Moto_ID[0]].round_cnt=0;	//离开柱子,圈数清零
 			}
 		}
 		else if(direction==touch_Right)
@@ -339,8 +338,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			{
 				Changing_Speed_Flag=0;
 				Hit_Gimbal=false;
-				if(Move_Allow==1)
-					gear_motor_data[Moto_ID[0]].round_cnt=0;
+				gear_motor_data[Moto_ID[0]].round_cnt=0;	//离开柱子,圈数清零
 			}
 		}
 	}
@@ -375,7 +373,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			}
 			else	//测量完之后回到轨道中间停下
 			{
-				Go_To_Middle(Chassic_Spring_Slow);
+//				Go_To_Middle(Chassic_Spring_Slow);
 			}
 			break;
 		}
@@ -495,19 +493,21 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	if(TIM1_cnt%2==0)		//2 freq div
 	{
 		CAN_Motor_Ctrl(&hcan2,Motor_Output);
-		
+	}
+	else
+	{
 		uint8_t Data[8]={0};
 		Data[0]=is_red_or_blue();		//红蓝方 视觉需求
 		Data[1]=Hit_Gimbal;		//云台规避
 		
 		#ifdef Test_Mode
-			Set_Game_Start();
+			Set_Game_Start();	//测试的时候手动设置裁判系统状态
 		#endif
 		if(GameState.game_progress==4)	//比赛开始
 			Data[2]=true;
 		else
 		{
-			Data[2]=false;
+			Data[2]=false;	//比赛未开始,前哨站和基地护盾默认存在
 			Field_Event_Data.Outpost_Alive=true;
 			Field_Event_Data.Base_Shield_Existence=true;
 		}
@@ -525,14 +525,14 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		#warning	//wait for test
 		#ifndef Test_Mode
 			if(BulletRemaining.bullet_remaining_num_17mm==0)	//500发		Shootable
-				Data[5]=false;
+				Data[5]=false;	//剩余发弹量为0,向云台发送数据,具体处理在云台
 			else
 		#endif
 			Data[5]=true;
 		
-		CAN_Send_Gimbal(&hcan1,Data,6);
+		CAN_Send_Gimbal(&hcan1,Data,6);	//发送数据给云台
 
-		if(Inspect_Position!=0)
+		if(Inspect_Position!=0)	//裁判系统读回,云台手的控制指令
 		{
 			/*	0 Normal
 				 *	1-4 Quadrant
@@ -541,7 +541,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				*/
 			uint8_t Data_Gimbal2[8]={0};
 			Data_Gimbal2[0]=Inspect_Position;
-			memcpy(&Data_Gimbal2[1],&Target_Angle,sizeof(float));
+			memcpy(&Data_Gimbal2[1],&Target_Angle,sizeof(float));	//云台手标记相对于哨兵的角度
 			if(CAN_Send_Gimbal2(&hcan1,Data_Gimbal2,1+sizeof(float))==HAL_OK)	//send success clean flag
 				Inspect_Position=0;
 		}
@@ -573,12 +573,12 @@ void TIM6_DAC_IRQHandler(void)
   /* USER CODE END TIM6_DAC_IRQn 0 */
   HAL_TIM_IRQHandler(&htim6);
   /* USER CODE BEGIN TIM6_DAC_IRQn 1 */
-	if(Buzzer_Busy==false && Buzzer_cnt!=0 && Buzzer_On_Time!=0)
-		Buzzer_Busy=true;
+	if(Buzzer_Busy==false && Buzzer_cnt!=0 && Buzzer_On_Time!=0)	//蜂鸣器
+		Buzzer_Busy=true;	//调用蜂鸣器发声函数会置Buzzer_cnt和Buzzer_On_Time的值
 	if(Buzzer_Busy==true)
 	{
-		++TIM6_cnt;
-		if(TIM6_cnt<Buzzer_On_Time)
+		++TIM6_cnt;	//蜂鸣器忙状态计数自增
+		if(TIM6_cnt<Buzzer_On_Time)	//在Buzzer_On_Time内蜂鸣器响
 		{
 			if(Buzzer_Working==false)
 			{
@@ -586,7 +586,7 @@ void TIM6_DAC_IRQHandler(void)
 				Buzzer_Working=true;
 			}
 		}
-		else if(TIM6_cnt<Buzzer_On_Time+Buzzer_Off_Time)
+		else if(TIM6_cnt<Buzzer_On_Time+Buzzer_Off_Time)	//在Buzzer_Off_Time内蜂鸣器不响
 		{
 			if(Buzzer_Working==true)
 			{
@@ -597,7 +597,7 @@ void TIM6_DAC_IRQHandler(void)
 		else
 		{
 			TIM6_cnt=0;
-			--Buzzer_cnt;
+			--Buzzer_cnt;	//蜂鸣器循环次数自减
 			if(Buzzer_cnt==0)
 				Buzzer_Busy=false;
 		}

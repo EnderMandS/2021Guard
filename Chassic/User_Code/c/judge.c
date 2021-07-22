@@ -14,6 +14,7 @@
 #include "crc.h"
 #include "bsp_usart.h"
 #include "bsp_judge.h"
+#include "bsp_can.h"
 
 uint8_t Judgement_Buf[JUDGEMENT_BUF_LEN];
 
@@ -173,7 +174,7 @@ bool Judge_Read_Data(uint8_t *ReadFromUsart)
 						if(RobotHurt.hurt_type == 0)//装甲伤害扣血
 						{
 							Hurt_Data_Update = true;
-							if(Gimbal_Position==0)
+							if(Gimbal_Position==0 && Aim==false)
 							{
 								if(RobotHurt.armor_id==0)
 									Inspect_Position=5;
@@ -217,7 +218,7 @@ bool Judge_Read_Data(uint8_t *ReadFromUsart)
 					
 					case ID_robot_interactive:	//机器人交互
 						memcpy(&Robot_Interactive,(ReadFromUsart + DATA),ReadFromUsart[DATA_LENGTH]);
-						Receive_Robot_Interactive();
+						// Receive_Robot_Interactive();
 					break;
 					
 					case ID_robot_command:	//客户端下发信息

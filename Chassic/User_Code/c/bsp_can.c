@@ -7,15 +7,15 @@
 #include "bsp_judge.h"
 #include <string.h>
 
-#define ABS(x) ((x > 0) ? x : -x)
+#define ABS(x) ((x > 0) ? x : -x)	//绝对值
 
-gear_moto_measure_t gear_motor_data[12];
-int16_t Motor_Output[12]={0};
-extern uint32_t Time_Tick;
+gear_moto_measure_t gear_motor_data[12];	//电机数据结构体数组
+int16_t Motor_Output[12]={0};	//电机输出暂存数组
+extern uint32_t Time_Tick;	//定时器中自增,can接收函数清空,用于判断云台有没有掉线
 
-bool Aim=false;
+bool Aim=false;	//云台接收的数据,是否瞄准到了目标
 
-void CAN_Filter_Init(void)
+void CAN_Filter_Init(void)	//can过滤器初始化
 {
   CAN_FilterTypeDef CAN_Filter_STM;
 	CAN_Filter_STM.FilterActivation=ENABLE;
@@ -37,7 +37,7 @@ void CAN_Filter_Init(void)
   HAL_CAN_Start(&hcan2);
   HAL_CAN_ActivateNotification(&hcan2, CAN_IT_RX_FIFO0_MSG_PENDING);
 }
-void get_gear_motor_measure(gear_moto_measure_t *ptr, uint8_t rxd[])
+void get_gear_motor_measure(gear_moto_measure_t *ptr, uint8_t rxd[])	//can接收数据写入电机结构体,并计算圈数
 {
     ptr->last_angle = ptr->angle;
     ptr->angle = (uint16_t)(rxd[0] << 8 | rxd[1]);
@@ -72,11 +72,11 @@ void get_gear_motor_measure(gear_moto_measure_t *ptr, uint8_t rxd[])
 	ptr->total_angle += delta;
 	(ptr)->real_total_angle = ((((ptr)->total_angle)%(36*8192))*360)/(8192*36);	
 }
-void Gimbal_Receive(uint8_t Receive_Data[8])
+void Gimbal_Receive(uint8_t Receive_Data[8])	//can云台接收数据转换函数
 {
-	Time_Tick=0;
+	Time_Tick=0;	//清空计数,表示从云台到了数据
 
-	Move_Allow=Receive_Data[0];
+	Move_Allow=Receive_Data[0];	//移动状态	0:禁止	1:正常	2:获取轨道长度
 	
 	switch( Receive_Data[1] )	//Shoot control
 	{
@@ -92,24 +92,24 @@ void Gimbal_Receive(uint8_t Receive_Data[8])
 			break;
 	}
 	
-	Switch_State[1]=Receive_Data[2];
+	Switch_State[1]=Receive_Data[2];	//微动开关状态,没用到,保留代码
 	
-	switch(Receive_Data[3])	// 0:Inspect  1:Aim
+	switch(Receive_Data[3])	//瞄准状态 0:Inspect  1:Aim
 	{
-		case 0:
+		case 0:	//没有瞄到,正常巡检
 			Aim=false;
 			if(Classic_Move_Speed!=Chassic_Spring_Fast)
-				Classic_Move_Speed=Chassic_Spring_Middle;
+				Classic_Move_Speed=Chassic_Spring_Middle;	//设置底盘速度为Middle
 		break;
 			
 		case 1:
-			if((is_red_or_blue()==BLUE && GameRobotHP.blue_7_robot_HP>100) ||
-					(is_red_or_blue()==RED && GameRobotHP.red_7_robot_HP>100))	//rest HP low, don't slow down
+			if((is_red_or_blue()==BLUE && GameRobotHP.blue_7_robot_HP>250) ||	//瞄准到了,血量足够则减速,提高瞄准精确度
+					(is_red_or_blue()==RED && GameRobotHP.red_7_robot_HP>250))	//rest HP low, don't slow down
 			{
 				Aim=true;
-				Classic_Move_Speed=Chassic_Spring_Slow;
+				Classic_Move_Speed=Chassic_Spring_Slow;	//设置底盘速度为Slow
 			}
-			else
+			else	//血量不足不减速
 			{
 				Aim=false;
 				if(Classic_Move_Speed!=Chassic_Spring_Fast)
@@ -121,9 +121,9 @@ void Gimbal_Receive(uint8_t Receive_Data[8])
 			break;
 	}
 	
-	Gimbal_Position=Receive_Data[4];
+	Gimbal_Position=Receive_Data[4];	//云台巡检状态,0为正常,1-4为象限,5前,6后,在1-4象限为云台手控制,5-6为装甲板击打更改的巡检方向
 }
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)	//can接收回调函数
 {
 	CAN_RxHeaderTypeDef rx_header;
 	uint8_t rx_data[8]={0};
@@ -143,7 +143,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 			case 0x209:
 			case 0x20A:
 			case 0x20B:
-					get_gear_motor_measure(&gear_motor_data[rx_header.StdId-Motor_Base], rx_data);
+					get_gear_motor_measure(&gear_motor_data[rx_header.StdId-Motor_Base], rx_data);	//can接收数据写入电机结构体
 				break;
 			
 		default:
@@ -153,10 +153,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 	else if (hcan == &hcan1)
 	{
 		if(rx_header.StdId==0x101)
-			Gimbal_Receive(rx_data);
+			Gimbal_Receive(rx_data);	//云台接收数据
 	}
 }
-void CAN_Motor_Ctrl(CAN_HandleTypeDef *hcan, int16_t Motor_Data[12])
+void CAN_Motor_Ctrl(CAN_HandleTypeDef *hcan, int16_t Motor_Data[12])	//can发送函数
 {
 	CAN_TxHeaderTypeDef can_tx_message;
 	can_tx_message.IDE = CAN_ID_STD;
@@ -165,9 +165,9 @@ void CAN_Motor_Ctrl(CAN_HandleTypeDef *hcan, int16_t Motor_Data[12])
 	
 	uint8_t can_send_data[8];
 	uint32_t send_mail_box;
-	uint16_t Std_ID[3]={0x200,0x1FF,0x2FF};
+	uint16_t Std_ID[3]={0x200,0x1FF,0x2FF};	
 	
-	for(uint8_t i=0; i<1; ++i)	//没用到，改成2
+	for(uint8_t i=0; i<1; ++i)	
 	{
 		can_tx_message.StdId = Std_ID[i];
 		can_send_data[0] = Motor_Data[4*i] >> 8;
@@ -181,7 +181,7 @@ void CAN_Motor_Ctrl(CAN_HandleTypeDef *hcan, int16_t Motor_Data[12])
 		HAL_CAN_AddTxMessage(hcan, &can_tx_message, can_send_data, &send_mail_box);
 	}
 }
-void CAN_Send_Gimbal(CAN_HandleTypeDef *hcan, uint8_t Data[], uint8_t Len)
+void CAN_Send_Gimbal(CAN_HandleTypeDef *hcan, uint8_t Data[], uint8_t Len)	//发送给云台 ID:1AA
 {
 	CAN_TxHeaderTypeDef can_tx_message;
 	can_tx_message.IDE = CAN_ID_STD;
@@ -193,7 +193,7 @@ void CAN_Send_Gimbal(CAN_HandleTypeDef *hcan, uint8_t Data[], uint8_t Len)
 	memcpy(can_send_data,Data,Len);
 	HAL_CAN_AddTxMessage(&hcan1, &can_tx_message, can_send_data, &send_mail_box);
 }
-HAL_StatusTypeDef CAN_Send_Gimbal2(CAN_HandleTypeDef *hcan, uint8_t Data[], uint8_t Len)
+HAL_StatusTypeDef CAN_Send_Gimbal2(CAN_HandleTypeDef *hcan, uint8_t Data[], uint8_t Len)	//发送给云台 ID:1BB
 {
 	CAN_TxHeaderTypeDef can_tx_message;
 	can_tx_message.IDE = CAN_ID_STD;
