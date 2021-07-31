@@ -60,6 +60,10 @@ uint8_t Shoot_Ultra_Mode=1;	//剩余热量多，高射速消耗热量，1有效
 int Heat_Rest=0;	//热量剩余,中断更新
 float Rail_Position=0.f;	//轨道位置,中断更新
 bool Hit_Gimbal=false;	//云台撞柱
+uint32_t Ka_Dan_cnt=0;	//卡弹时间计数
+bool Ka_Dan=false;	//卡单标志位
+uint32_t Ka_Dan_Times=0;	//卡弹次数
+bool Ka_Dan_Stop=false;	//卡弹次数过多拨弹停转
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -261,8 +265,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	if(TIM1_cnt==0xFFFFFFFF)
 		TIM1_cnt=0;
 	
-	static uint32_t Ka_Dan_cnt=0;	//卡弹时间计数
-	static bool Ka_Dan=false;	//卡单标志位
   /* USER CODE END TIM1_UP_TIM10_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_UP_TIM10_IRQn 1 */
@@ -296,6 +298,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			eliminate_dithering_left++;
 			if (eliminate_dithering_left >= 20) //消抖
 			{
+				if(Classic_Move_Speed==Chassic_Spring_Fast)
+					Classic_Move_Speed=Chassic_Spring_Middle;	//恢复巡检速度
 				#ifdef USE_SPRING
 					direction = touch_Left;
 				#else
@@ -311,6 +315,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			eliminate_dithering_left = 0;	//清空另一边的消抖计数
 			if (eliminate_dithering_right >= 20)
 			{
+				if(Classic_Move_Speed==Chassic_Spring_Fast)
+					Classic_Move_Speed=Chassic_Spring_Middle;	//恢复巡检速度
 				#ifdef USE_SPRING
 					direction = touch_Right;
 				#else
@@ -371,14 +377,10 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				Spring(direction,Classic_Move_Speed);
 				Measuer_Rail_Len();
 			}
-			else	//测量完之后回到轨道中间停下
-			{
-//				Go_To_Middle(Chassic_Spring_Slow);
-			}
 			break;
 		}
 		
-		case 3:		//回到轨道中间 这个case暂时没有使用
+		case 3:		//回到轨道中间 有bug 这个case暂时没有使用
 			if(Measuer_State==End_Measure)
 				Go_To_Middle(Chassic_Spring_Slow);
 			else
@@ -465,8 +467,17 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			++Ka_Dan_cnt;	//计数值自加
 			if(Ka_Dan_cnt>400)	//1s 400hz
 			{
+				++Ka_Dan_Times;
 				Ka_Dan=true;	//卡单标志位
-				Ka_Dan_cnt=400;	//反转时间
+				if(Ka_Dan_Times%5!=0)
+				{
+					Ka_Dan_cnt=400;	//反转时间
+				}
+				else
+				{
+					Ka_Dan_Stop=true;
+					Ka_Dan_cnt=2000;	//停转时间
+				}
 				Buzzer_Short(1);
 			}
 		}
@@ -475,11 +486,19 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			--Ka_Dan_cnt;
 			if(Ka_Dan_cnt!=0)
 			{
-				Cartridge_wheel_PID_Calc(-Cartridge_Fast);
-				Motor_Output[Cartridge]=Cartridge_wheel.output;
+				if(Ka_Dan_Stop==false)
+				{
+					Cartridge_wheel_PID_Calc(-Cartridge_Fast);
+					Motor_Output[Cartridge]=Cartridge_wheel.output;
+				}
+				else
+				{
+					Cartridge_wheel_PID_Calc(0);
+					Motor_Output[Cartridge]=0;
+				}
 			}
 			else
-				Ka_Dan=false;	//清空标志位
+				Ka_Dan_Stop=Ka_Dan=false;	//清空标志位
 		}
 		else
 			Ka_Dan_cnt=0;
@@ -524,7 +543,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 
 		#warning	//wait for test
 		#ifndef Test_Mode
-			if(BulletRemaining.bullet_remaining_num_17mm==0)	//500发		Shootable
+			if(BulletRemaining.bullet_remaining_num_17mm==0 && GameState.game_progress==4)	//500发		Shootable
 				Data[5]=false;	//剩余发弹量为0,向云台发送数据,具体处理在云台
 			else
 		#endif

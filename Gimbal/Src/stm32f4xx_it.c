@@ -39,24 +39,13 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN TD */
-//Speed for 1锛宲osition for 0
-#define shoot_speed 1
+#define shoot_speed 1	//Speed for 1   position for 0
 
-float yaw_nowangle;
-float pit_nowangle;
+float yaw_nowangle=301.5f;
+float pit_nowangle=98.f;
 int control_mode = 0; //Contorl Mode: 0 for protect, 1 for remote, 2 for auto
-int Cartridge_output;
-int set_spd_to_Classis_wheel;
 
-#define touch_Left -1
-#define touch_Right 1
-int direction=1;
-int eliminate_dithering_left = 0;
-int eliminate_dithering_right = 0;
-
-uint16_t Change_Dir_Cnt=0;
-
-uint8_t TIM1_Div=0;
+uint8_t TIM1_Div=0;	//分频计数
 
 /*
 0x200	1,2,3,4
@@ -79,7 +68,7 @@ uint8_t TIM1_Div=0;
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-int Firc_Speed=-6100;		//6100
+int Firc_Speed=6200;		//6100
 /*
 	3000 10m/s
 	
@@ -87,7 +76,7 @@ int Firc_Speed=-6100;		//6100
 	6000 26.2m/s
 */
 
-uint8_t Motor_Power_Up=0;
+uint8_t Motor_Power_Up=0;	//电机上电标志位
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -313,16 +302,16 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	if(Motor_Power_Up==0)	//Wait for motor & gryo power up
 	{
 		if(	gear_motor_data[Gimbal_Y].real_current!=0 &&
-				gear_motor_data[Gimbal_P].real_current!=0 &&
-				gear_motor_data[Fric_1].real_current!=0 	&&
-				gear_motor_data[Fric_2].real_current!=0		&&
-				Hi229_Update!=0	)
+			gear_motor_data[Gimbal_P].real_current!=0 &&
+			gear_motor_data[Fric_1].real_current!=0   &&
+			gear_motor_data[Fric_2].real_current!=0	  &&
+			Hi229_Update!=0	)
 				Motor_Power_Up=1;
 		else
 			Buzzer_ms(1,50,2000);
 	}
 
-	yaw_nowangle = Yaw_Motor_Angle_Change();
+	yaw_nowangle = Yaw_Motor_Angle_Change();	//获得yaw角度,0-360,有同步带,需要角度转换
 	if(Pitch_USE_Gyro==true)
 		pit_nowangle = eular[0];
 	else
@@ -332,9 +321,9 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	{
 		case 1:	//Auto
 		{
-			Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
-			Gimbal_Sotf_Start();
-			Gimbal_Automatic_control();
+			Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;	//使能云台can输出
+			Gimbal_Sotf_Start();	//云台缓起
+			Gimbal_Automatic_control();	//自动控制
 			switch(view_shoot_mode)	//Flick	DD:None, EE:Slow, FF:Fast
 			{
 				case 0xEE:	//Fast
@@ -342,6 +331,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 					break;
 				
 				case 0xFF:	//Slow
+					
 					Shoot_Ctrl=3;
 					break;
 				
@@ -349,8 +339,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 					Shoot_Ctrl=0;
 					break;
 			}
-			if( Yaw_At_Border()==true && view_shoot_mode==0xEE && Limit_Yaw==true )
-				Shoot_Ctrl=3;
 			
 			#define Auto_Ctrl
 			#ifdef Auto_Ctrl	//According to match state, chooce different function.  Auto priority higher than remote
@@ -365,11 +353,11 @@ void TIM1_UP_TIM10_IRQHandler(void)
 					remote_control.switch_left=1;
 			#endif
 			
-			switch(remote_control.switch_left)
+			switch(remote_control.switch_left)	//自动控制模式下左拨弹状态
 			{
 				case 1:	//Chassis + Friction
-					Chassic_State=1;
-					if(Shootable==false)
+					Chassic_State=1;	//底盘移动
+					if(Shootable==false)	//底盘裁判系统读回
 						Shoot_Speed_Pid_Calc(0);
 					else
 					{
@@ -379,7 +367,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 					break;
 				
 				case 3:	//Friction
-					Chassic_State=0;
+					Chassic_State=0;	//底盘停止
 					if(Shootable==false)
 						Shoot_Speed_Pid_Calc(0);
 					else
@@ -400,14 +388,14 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		
 		case 3:	//Remote
 		{
-			Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;
-			Gimbal_Sotf_Start();
-			Gimbal_Remote_Control();
+			Motor_Output_State[Gimbal_Y]=Motor_Output_State[Gimbal_P]=1;	//使能云台can输出
+			Gimbal_Sotf_Start();	//缓起
+			Gimbal_Remote_Control();	//遥控
 			if(sotf_start==0)		//wait for gimbal soft start
 			{
-				switch(remote_control.switch_left)
+				switch(remote_control.switch_left)	//遥控模式下左拨杆
 				{
-					case 1:	//chassis
+					case 1:	//chassis 只有底盘
 					{
 						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=0;
 						Shoot_Speed_Pid_Calc(0);
@@ -416,11 +404,11 @@ void TIM1_UP_TIM10_IRQHandler(void)
 					}
 					break;
 					
-					case 3:	//friction + flick
+					case 3:	//friction + flick	摩擦轮+拨弹
 					{
 						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
 						Shoot_Speed_Pid_Calc(Firc_Speed);
-						Shoot_Ctrl=2;	//Fast
+						Shoot_Ctrl=2;	//Fast高射速
 						Chassic_State=0;
 					}
 					break;
@@ -440,14 +428,14 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		
 		case 2:	//None
 		{
-			read_allow = 0;
+			read_allow = 0;	//清空缓起标志位
 			control_allow = 0;
 			sotf_start = 1;
 			Shoot_Speed_Pid_Calc(0);	//friction
 			Motor_Output[Fric_1]=Motor_Output[Fric_2]=0;
 			switch(remote_control.switch_left)
 			{
-				case 1:
+				case 1:	//轨长采样
 					Motor_Output_State[Gimbal_Y]=1;
 					if( Gimbal_Keep_Middle()==true )
 						Chassic_State=2;	//Get railway lenth
@@ -465,6 +453,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			break;
 	}
 
+	//使能为PID输出,失能为0
 	if(Motor_Output_State[Gimbal_Y]==1)
 		Motor_Output[Gimbal_Y]=yaw;
 	else
@@ -485,14 +474,14 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	else
 		Motor_Output[Fric_2]=0;
 	
-	uint8_t Switch_State=0;	//Micro switch state
+	uint8_t Switch_State=0;	//Micro switch state	没用到
 	if(HAL_GPIO_ReadPin(GPIOE, GPIO_PIN_9) == GPIO_PIN_RESET)
 		Switch_State=0;
 	else
 		Switch_State=1;
 	
-	++TIM1_Div;
-	if(TIM1_Div==2)
+	++TIM1_Div;	//计数自增
+	if(TIM1_Div>=2)	//底盘控制
 	{
 		TIM1_Div=0;
 		if(Shootable==false)	//Read for judgement, unablde to shoot, 500 bullte limit
@@ -502,9 +491,9 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			Aimming=false;
 		}
 		uint8_t Chassic_Data[5]={Chassic_State,Shoot_Ctrl,Switch_State,Aimming,Inspect_Position};
-		Chassic_Ctrl(Chassic_Data,5);
+		Chassic_Ctrl(Chassic_Data,5);	//发给底盘
 	}
-	else if(TIM1_Div==1)
+	else if(TIM1_Div==1)	//电机控制
 	{
 		CAN_Motor_Ctrl(&hcan1,Motor_Output);
 		memset(Motor_Output_State,0,sizeof(Motor_Output_State));	//clean

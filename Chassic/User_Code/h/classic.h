@@ -14,7 +14,7 @@
 
 #define Chassic_Spring_Slow		3000
 #define Chassic_Spring_Middle	4000
-#define Chassic_Spring_Fast		6000
+#define Chassic_Spring_Fast		8000
 
 #define Motor_Base 0x201
 typedef enum
@@ -45,7 +45,6 @@ extern int Classic_Move_Speed;
 extern uint8_t Moto_ID[2];
 extern uint8_t Aimming;
 extern uint8_t Changing_Speed_Flag;
-extern uint8_t Line;
 extern int Last_Dir;
 extern uint8_t Measuer_State;
 extern uint32_t Rail_Len;

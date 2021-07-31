@@ -5,28 +5,25 @@
 #include "bsp_can.h"
 #include "stm32f4xx_it.h"
 
-int Buff_Time=200;
+int Buff_Time=100;	//缓慢启动的缓冲时间
+uint16_t Time_Cnt=0;	//缓慢启动缓冲时间计数
+int Last_Dir=1;	//前一次方向
 
-uint16_t Time_Cnt=0;
-int Last_Dir=1;
-
-float set_spd[2];
-PID_TypeDef motor_pid[2];
-uint8_t Moto_ID[2]={Chassic_L,Chassic_R};
-uint8_t Move_Allow=0;
-int direction=1;
-uint8_t Line=1;
-int eliminate_dithering_left = 0;
+PID_TypeDef motor_pid[2];	//底盘电机PID结构体
+uint8_t Moto_ID[2]={Chassic_L,Chassic_R};	//底盘电机ID
+uint8_t Move_Allow=0;	//移动状态机, 0停止 1移动 2轨长采样
+int direction=1;	//底盘移动方向
+int eliminate_dithering_left = 0;	//红外开关消抖计数
 int eliminate_dithering_right = 0;
-int Classic_Move_Speed=Classic_Slow;
-uint8_t Aimming=0;
+int Classic_Move_Speed=Classic_Slow;	//底盘移动速度,初始化为低速
+uint8_t Aimming=0;	//瞄准状态
 uint8_t Changing_Speed_Flag=0;	//改变速度方向时置1，由变速函数置0		光电开关和闪避检测置1
 
-void Chassis_init(void)
+void Chassis_init(void)	//底盘初始化函数
 {
 	for(int j=0;j<2;j++)
 	{
-		pid_init(&motor_pid[j]);
+		pid_init(&motor_pid[j]);	//PID初始化
 		motor_pid[j].f_param_init(&motor_pid[j],PID_Speed,5000,2500,10,0,6000,0,1.5,0.1,0);  //0.004
 /*				   PID_ID id,uint16_t maxOutput,uint16_t integralLimit,float deadband,uint16_t controlPeriod,int16_t max_err,     
 			int16_t  target,
@@ -34,45 +31,25 @@ void Chassis_init(void)
 			 float ki,
 			 float kd);*/
 	}
-    set_spd[0] = 0;
-    set_spd[1] = 0;
 }
 
-float Slow_Change_Speed(int dir, uint16_t Speed)
+float Slow_Change_Speed(int dir, uint16_t Speed)	//缓慢改变速度,可以减小轮子损耗
 {
-//	switch(Speed)
-//	{
-//		case Classic_Slow:
-//			Buff_Time=400;
-//		break;
-//		
-//		case Classic_Middle:
-//			Buff_Time=200;
-//		break;
-//		
-//		case Classic_Fast:
-//			Buff_Time=150;
-//		break;
-//		
-//		default:
-//			Buff_Time=150;
-//		break;
-//	}
-	Buff_Time=100;
-	if(dir!=Last_Dir)
+	Buff_Time=100;	//缓冲时间
+	if(dir!=Last_Dir)	//方向改变
 	{
-		++Time_Cnt;
+		++Time_Cnt;	//计数自增
 		if(Time_Cnt<Buff_Time)
 		{
 			if(Last_Dir==0)
-				return dir*sin( (Time_Cnt*1.0)/Buff_Time*PI*0.5 )*Speed;
+				return dir*sin( (Time_Cnt*1.0)/Buff_Time*PI*0.5 )*Speed;	//原方向减速
 			else
-				return Last_Dir*cos( (Time_Cnt*1.0)/Buff_Time*PI )*Speed;
+				return Last_Dir*cos( (Time_Cnt*1.0)/Buff_Time*PI )*Speed;	//反方向加速
 		}
 		else
 		{
-			Last_Dir=dir;
-			Changing_Speed_Flag=Time_Cnt=0;
+			Last_Dir=dir;	//反向完成
+			Changing_Speed_Flag=Time_Cnt=0;	//清空计数
 		}
 	}
 	return dir*Speed;
@@ -80,13 +57,13 @@ float Slow_Change_Speed(int dir, uint16_t Speed)
 
 #define Wait_Cnt 400		//检测到电机反转之后等待时间 实际时间=Wait_Cnt/400Hz
 bool Dir_Change_Wait=false;
-int16_t Max_Speed=0;
-uint32_t Dir_Change_Wait_Cnt=0;
+int16_t Max_Speed=0;	//弹簧弹性势能释放底盘的最高速度
+uint32_t Dir_Change_Wait_Cnt=0;	//检测到电机反转之后等待计数
 void Spring(int dir,uint16_t Speed)
 {
 	if(dir!=Last_Dir)	//速度改变
 	{
-		if(Last_Dir==1)
+		if(Last_Dir==1)	//判断方向
 		{
 			if(gear_motor_data[Moto_ID[0]].speed_rpm>0)	//电机给0,等待弹簧反弹
 			{
@@ -133,7 +110,7 @@ void Spring(int dir,uint16_t Speed)
 				Dir_Change_Wait_Cnt=0;
 				Dir_Change_Wait=false;
 			}
-			if( abs(gear_motor_data[Moto_ID[0]].speed_rpm) > abs(Max_Speed) )
+			if( abs(gear_motor_data[Moto_ID[0]].speed_rpm) > abs(Max_Speed) )	//记录反弹最高速度
 				Max_Speed=gear_motor_data[Moto_ID[0]].speed_rpm;
 			else if( abs(gear_motor_data[Moto_ID[0]].speed_rpm) < abs(Max_Speed)-200 )	//弹性势能完全释放,速度开始下降,电机给电
 			{

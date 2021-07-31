@@ -15,21 +15,15 @@
 // 各电机ID分配
 typedef enum
 {
-	Chassic_Left_3508_ID = 0x201,
-	Chassic_Right_3508_ID = 0x202,
-	Cartridge_2006_ID = 0x205,
 	Gimbal_Yaw_6020_ID = 0x206,
 	Gimbal_Pitch_6020_ID = 0x208,
-	Fric_wheel_1=0x203,
-	Fric_wheel_2=0x204
+	Fric_wheel_1=0x201,
+	Fric_wheel_2=0x202
 }CAN_Message_ID;
 
 //motor_data分配
 typedef enum
 {
-    Chassic_L = Chassic_Left_3508_ID	-Motor_Base,
-    Chassic_R = Chassic_Right_3508_ID	-Motor_Base,
-    Cartridge = Cartridge_2006_ID			-Motor_Base,
     Gimbal_Y  = Gimbal_Yaw_6020_ID		-Motor_Base,
     Gimbal_P  = Gimbal_Pitch_6020_ID	-Motor_Base,
 		Fric_1		= Fric_wheel_1					-Motor_Base,

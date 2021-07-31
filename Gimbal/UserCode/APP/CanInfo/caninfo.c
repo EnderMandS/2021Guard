@@ -5,20 +5,18 @@
 #include "Gimbal.h"
 #include "buzzer.h"
 
-gear_moto_measure_t gear_motor_data[12];
-int16_t Motor_Output[12]={0};
-uint8_t Motor_Output_State[12]={0};
-uint8_t Wait_For_Motor_Cnt[12]={0};
-uint8_t Wait_For_Motor_State=1;
-bool Game_Start=false;
-bool Base_Shield=true;
-bool Outpost_Alive=true;
-extern int Firc_Speed;
-extern uint8_t color;
-uint32_t Can_Error=0;
-bool Shootable=true;
-uint8_t Inspect_Position=0;
-bool Hit_Gimbal=false;
+gear_moto_measure_t gear_motor_data[12];	//电机数据结构体
+int16_t Motor_Output[12]={0};		//电机输出暂存结构体
+uint8_t Motor_Output_State[12]={0};	//电机允许输出标志位
+bool Game_Start=false;	//底盘裁判系统读回,比赛开始
+bool Base_Shield=true;	//底盘裁判系统读回,基地护盾存在状态
+bool Outpost_Alive=true;	//底盘裁判系统读回,前哨站存活状态
+extern int Firc_Speed;	//摩擦轮速度
+extern uint8_t color;	//底盘裁判系统读回,红蓝方
+uint32_t Can_Error=0;	//can发送错误计数,debug用
+bool Shootable=true;	//底盘裁判系统读回,500发,能否继续发弹
+uint8_t Inspect_Position=0;	//底盘底盘裁判系统发回云台手控制象限方向
+bool Hit_Gimbal=false;	//底盘发送,撞云台
 
 /**
  * @brief: 数据处理,将接收到数据传入指针并解算
@@ -43,7 +41,7 @@ void get_motor_measure(gear_moto_measure_t *ptr, uint8_t rxd[])
     }
 }
 
-#define ABS(x)	( (x>0) ? (x) : (-x) )
+#define ABS(x)	( (x>0) ? (x) : (-x) )	//绝对值
 /**
  * @brief: 减速电机数据处理,将接收到数据传入指针并解算
  * @param {void} 
@@ -112,10 +110,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 			case 0x209:
 			case 0x20A:
 			case 0x20B:
-					get_gear_motor_measure(&gear_motor_data[rx_header.StdId-Motor_Base], rx_data);
+					get_gear_motor_measure(&gear_motor_data[rx_header.StdId-Motor_Base], rx_data);	//电机数据,写入结构体
 				break;
 			
-			case 0x1AA:
+			case 0x1AA:	//底盘发送的数据包1, 定时发送, 包含各种裁判系统信息
 				color=rx_data[0];
 				Hit_Gimbal=rx_data[1];
 				Game_Start=rx_data[2];
@@ -127,7 +125,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 				// Limit_Yaw=Outpost_Alive;	//Outpost not alive, don't limit yaw
 			break;
 					
-			case 0x1BB:
+			case 0x1BB:	//底盘发送的数据包2, 云台手控制信息, 仅在云台手控制后发出
 				/*	0 Normal
 				 *	1-4 Quadrant
 				 *	5 Front
@@ -140,21 +138,21 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
 					case 2:
 					case 3:
 					case 4:
-						Position_Inspect_cnt=Position_Inspect_Time;
-						Angle_Stay=Angle_Stay_Time;
+						Position_Inspect_cnt=Position_Inspect_Time;	//重置象限定向巡检方向次数
+						Angle_Stay=Angle_Stay_Time;	//重置角度定向巡检时间
 					break;
 					
 					case 5:
 					case 6:
-						Position_Inspect_cnt=Front_Back_Time;
+						Position_Inspect_cnt=Front_Back_Time;	//重置前后方定向巡检方向次数
 					break;
 					
 					default:
-						Inspect_Position=Position_Inspect_cnt=0;
+						Inspect_Position=Position_Inspect_cnt=0;	//清空定向巡检次数
 					break;
 				}
 				memcpy(&Inspect_Angle,&rx_data[1],sizeof(float));
-				Gimbal_Force_Time_cnt=0;	//云台手强制控制
+				Gimbal_Force_Time_cnt=0;	//云台手强制控制, 禁止NUC控制时间
 				Buzzer_Short(1);
 			break;
 			

@@ -3,12 +3,12 @@
 #include "bsp_can.h"
 #include "classic.h"
 
-uint8_t Shoot_State=0;
-gear_moto_position_pid Cartridge_Position_Pid[2];
-PID_TypeDef Cartridge_wheel;
-uint16_t Cartridge_angle=0;
+uint8_t Shoot_State=0;	//云台接收,发射状态
+gear_moto_position_pid Cartridge_Position_Pid[2];	//拨弹位置环PID结构体	位置环没用到
+PID_TypeDef Cartridge_wheel;	//拨弹普通结构体
+uint16_t Cartridge_angle=0;	//拨弹位置环角度
 
-void gear_moto_position_pid_init(void)
+void gear_moto_position_pid_init(void)	//拨弹PID初始化
 {
 	//位置环Init
 	Cartridge_Position_Pid[OUT].p =  0.15;
@@ -31,7 +31,7 @@ void gear_moto_position_pid_init(void)
 	pid_init(&Cartridge_wheel);
   Cartridge_wheel.f_param_init(&Cartridge_wheel,PID_Speed,10000,10000,10,0,2700,0,1.3,0.05,0);
 }
-float gear_moto_position_pid_calc(gear_moto_position_pid *pid_out,gear_moto_position_pid *pid_in,float target,float now_angle,int16_t feeback_rpm)
+float gear_moto_position_pid_calc(gear_moto_position_pid *pid_out,gear_moto_position_pid *pid_in,float target,float now_angle,int16_t feeback_rpm)	//拨弹位置环PID计算
 {
 	pid_out->CurrentError =  target - now_angle;
 		if(fabs(pid_out->CurrentError)>180)
@@ -60,7 +60,7 @@ float gear_moto_position_pid_calc(gear_moto_position_pid *pid_out,gear_moto_posi
 	pid_in->LastError = pid_in->CurrentError;
 	return pid_in->pidout;
 }
-void Cartridge_wheel_PID_Calc(int16_t Cartridge_wheel_Speed)
+void Cartridge_wheel_PID_Calc(int16_t Cartridge_wheel_Speed)	//速度环PID计算
 {
 	Cartridge_wheel.target = Cartridge_wheel_Speed;
 	Cartridge_wheel.f_cal_pid(&Cartridge_wheel,gear_motor_data[Cartridge].speed_rpm);

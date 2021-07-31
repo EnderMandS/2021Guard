@@ -27,6 +27,5 @@ void gear_moto_position_pid_init(void);
 float gear_moto_position_pid_calc(gear_moto_position_pid *pid_out,gear_moto_position_pid *pid_in,float target,float now_angle,int16_t feeback_rpm);
 void Shoot_Speed_Pid_Init(void);
 void Shoot_Speed_Pid_Calc(float Fric_Speed_target);
-void Cartridge_wheel_PID_Calc(int16_t Cartridge_wheel_Speed);
 #endif
 

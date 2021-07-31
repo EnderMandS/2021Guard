@@ -19,6 +19,6 @@ uint16_t Get_CRC16_Check_Sum(uint8_t *pchMessage,uint32_t dwLength,uint16_t wCRC
 #define    FALSE    0
 #define    TRUE     1
 
-
+extern uint16_t CRC_INIT;
 
 #endif

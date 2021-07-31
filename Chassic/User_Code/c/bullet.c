@@ -9,7 +9,7 @@
 
 uint8_t Switch_State[2]={0};	// [0]Up  [1]Down
 
-void Updata_Switch_State(void)
+void Updata_Switch_State(void)	//没用到
 {
 	switch( HAL_GPIO_ReadPin(Shoot_Switch_Up_Pin, Shoot_Switch_Up_Port) )
 	{

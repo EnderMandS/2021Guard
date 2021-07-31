@@ -12,6 +12,7 @@
 #include "judge.h"
 #include "Gimbal.h"
 #include "buzzer.h"
+#include "crc.h"
 
 uint8_t view_send_state;
 uint8_t Judgement_Buf[JUDGEMENT_BUF_LEN];
@@ -56,12 +57,15 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 		 *	[2] Shoot Mode
 		 *	[3]-[6] pitch
 		 *	[7]-[10] yaw
-		 *	[11] Air resistance
-		 *	[12] Tail 0xFA
+		 *	[11] Task Mode
+		 *	[12] 风车标志位
+		 *	[13] 保留
+		 *	[14]-[15] CRC16
 		 *	50Hz 20ms
 		*/
-		memcpy(&rx_view_buf, View_Buf, 100); //数据长度rx_view_buf
-		if (rx_view_buf[0] == 0xAF && rx_view_buf[12] == 0xFA)	//标识符
+		memcpy(rx_view_buf, View_Buf, 100); //数据长度rx_view_buf
+		
+		if (rx_view_buf[0] == 0xAF && Verify_CRC16_Check_Sum(rx_view_buf,16)==true)	//标识符
 		{
 			switch (rx_view_buf[1]) //命令位
 			{

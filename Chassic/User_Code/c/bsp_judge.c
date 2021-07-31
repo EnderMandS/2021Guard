@@ -177,7 +177,7 @@ void Receive_Robot_Interactive(void)	//没用到
 	}
 }
 
-bool Game_Start=false;
+bool Game_Start=false;	//调试用,设置比赛开始状态
 void Set_Game_Start(void)
 {
 	if(Game_Start)
@@ -186,23 +186,23 @@ void Set_Game_Start(void)
 		GameState.game_progress=0;
 }
 
-bool Set_Outpost=true;
+bool Set_Outpost=true;	//调试用,设置前哨站状态
 void Set_Outpost_Alive(void)
 {
 	Field_Event_Data.Outpost_Alive=Set_Outpost;
 }
 
-bool Set_Base_Shield=true;
+bool Set_Base_Shield=true;	//调试用,设置基地护盾状态
 void Set_Base_Shield_Existence(void)
 {
 	Field_Event_Data.Base_Shield_Existence=Set_Base_Shield;
 }
 
-void Rand_Dir_Time(void)
+void Rand_Dir_Time(void)	//随机变向
 {
-	if(Rail_Position>0.2f && Rail_Position<0.8f)
+	if(Rail_Position>0.2f && Rail_Position<0.8f)	//不在轨道边缘
 	{
-		--Rand_cnt;
+		--Rand_cnt;	//变向倒计数
 		if(Rand_cnt==0 &&	//time cnt complete
 			 Changing_Speed_Flag==0 &&	//not changing speed
 			 Classic_Move_Speed==Chassic_Spring_Middle &&	//in normal speed , not speed up and aim
@@ -217,102 +217,95 @@ void Rand_Dir_Time(void)
 	}
 }
 
-float Target_Angle=0;
-bool Select_Guard=false;
-#define Red_Guard_Position_X 5.42f
+float Target_Angle=0;	//发给云台的巡检角度
+#define Red_Guard_Position_X 5.42f	//小地图上红方哨兵位置
 #define Red_Guard_Position_Y 8.44f
-#define Blue_Guard_Position_X 22.71f
+#define Blue_Guard_Position_X 22.71f	//蓝方哨兵位置
 #define Blue_Guard_Position_Y 8.26f
-void Robot_Command_Receive(void)
+void Robot_Command_Receive(void)	//在裁判系统接收函数中调用
 {
-	if(Robot_Command.target_position_x==0 && Robot_Command.target_position_y==0 && Robot_Command.target_position_z==0)
-		Select_Guard=false;
-	else if(Robot_Command.target_robot_ID==0)
-		Select_Guard=true;
-	
-	if(Select_Guard==true)
+	uint8_t Inspect_Position_temp=0;
+	//Quadrant
+	if(is_red_or_blue()==RED)	//红方根据坐标解算象限
 	{
-		//Quadrant
-		if(is_red_or_blue()==RED)
+		if(Robot_Command.target_position_x>Red_Guard_Position_X && Robot_Command.target_position_y<=Red_Guard_Position_Y)
+			Inspect_Position_temp=1;
+		else if(Robot_Command.target_position_x>Red_Guard_Position_X && Robot_Command.target_position_y>Red_Guard_Position_Y)
+			Inspect_Position_temp=2;
+		else if(Robot_Command.target_position_x<=Red_Guard_Position_X && Robot_Command.target_position_y>Red_Guard_Position_Y)
+			Inspect_Position_temp=3;
+		else if(Robot_Command.target_position_x<=Red_Guard_Position_X && Robot_Command.target_position_y<=Red_Guard_Position_Y)
+			Inspect_Position_temp=4;
+	}
+	else	//蓝方解算象限
+	{
+		if(Robot_Command.target_position_x<=Blue_Guard_Position_X && Robot_Command.target_position_y>Blue_Guard_Position_Y)
+			Inspect_Position_temp=1;
+		else if(Robot_Command.target_position_x<=Blue_Guard_Position_X && Robot_Command.target_position_y<=Blue_Guard_Position_Y)
+			Inspect_Position_temp=2;
+		else if(Robot_Command.target_position_x>Blue_Guard_Position_X && Robot_Command.target_position_y<=Blue_Guard_Position_Y)
+			Inspect_Position_temp=3;
+		else if(Robot_Command.target_position_x>Blue_Guard_Position_X && Robot_Command.target_position_y>Blue_Guard_Position_Y)
+			Inspect_Position_temp=4;
+	}
+	
+	//Angle
+	if(is_red_or_blue()==RED)	//arctan dead area
+	{
+		if(Robot_Command.target_position_y==Red_Guard_Position_Y)
 		{
-			if(Robot_Command.target_position_x>Red_Guard_Position_X && Robot_Command.target_position_y<=Red_Guard_Position_Y)
-				Inspect_Position=1;
-			else if(Robot_Command.target_position_x>Red_Guard_Position_X && Robot_Command.target_position_y>Red_Guard_Position_Y)
-				Inspect_Position=2;
-			else if(Robot_Command.target_position_x<=Red_Guard_Position_X && Robot_Command.target_position_y>Red_Guard_Position_Y)
-				Inspect_Position=3;
-			else if(Robot_Command.target_position_x<=Red_Guard_Position_X && Robot_Command.target_position_y<=Red_Guard_Position_Y)
-				Inspect_Position=4;
-		}
-		else
-		{
-			if(Robot_Command.target_position_x<=Blue_Guard_Position_X && Robot_Command.target_position_y>Blue_Guard_Position_Y)
-				Inspect_Position=1;
-			else if(Robot_Command.target_position_x<=Blue_Guard_Position_X && Robot_Command.target_position_y<=Blue_Guard_Position_Y)
-				Inspect_Position=2;
-			else if(Robot_Command.target_position_x>Blue_Guard_Position_X && Robot_Command.target_position_y<=Blue_Guard_Position_Y)
-				Inspect_Position=3;
-			else if(Robot_Command.target_position_x>Blue_Guard_Position_X && Robot_Command.target_position_y>Blue_Guard_Position_Y)
-				Inspect_Position=4;
-		}
-		
-		//Angle
-		if(is_red_or_blue()==RED)	//arctan dead area
-		{
-			if(Robot_Command.target_position_y==Red_Guard_Position_Y)
-			{
-				if(Robot_Command.target_position_x>Red_Guard_Position_X)
-					Target_Angle=90;
-				else
-					Target_Angle=270;
-				return;
-			}
-		}
-		else
-		{
-			if(Robot_Command.target_position_y==Blue_Guard_Position_Y)
-			{
-				if(Robot_Command.target_position_x<Blue_Guard_Position_X)
-					Target_Angle=90;
-				else
-					Target_Angle=270;
-				return;
-			}
-		}
-		
-		float dif_x=0;
-		float dif_y=0;
-		if(is_red_or_blue()==RED)
-		{
-			dif_x=Robot_Command.target_position_x-Red_Guard_Position_X;
-			dif_y=Robot_Command.target_position_y-Red_Guard_Position_Y;
-		}
-		else
-		{
-			dif_x=Robot_Command.target_position_x-Blue_Guard_Position_X;
-			dif_y=Robot_Command.target_position_y-Blue_Guard_Position_Y;
-		}
-		switch(Inspect_Position)
-		{
-			case 1:
-				Target_Angle=atan(-dif_x/dif_y)/(PI/2.f)*90;
-			break;
-			
-			case 2:
-				Target_Angle=atan(dif_y/dif_x)/(PI/2.f)*90+90;
-			break;
-			
-			case 3:
-				Target_Angle=atan(dif_x/-dif_y)/(PI/2.f)*90+180;
-			break;
-			
-			case 4:
-				Target_Angle=atan(dif_y/dif_x)/(PI/2.f)*90+270;
-			break;
-			
-			default:
-				Target_Angle=45.f;
-			break;
+			if(Robot_Command.target_position_x>Red_Guard_Position_X)
+				Target_Angle=90;
+			else
+				Target_Angle=270;
+			return;
 		}
 	}
+	else
+	{
+		if(Robot_Command.target_position_y==Blue_Guard_Position_Y)
+		{
+			if(Robot_Command.target_position_x<Blue_Guard_Position_X)
+				Target_Angle=90;
+			else
+				Target_Angle=270;
+			return;
+		}
+	}
+	
+	float dif_x=0;
+	float dif_y=0;
+	if(is_red_or_blue()==RED)	//dx,dy
+	{
+		dif_x=Robot_Command.target_position_x-Red_Guard_Position_X;
+		dif_y=Robot_Command.target_position_y-Red_Guard_Position_Y;
+	}
+	else
+	{
+		dif_x=Robot_Command.target_position_x-Blue_Guard_Position_X;
+		dif_y=Robot_Command.target_position_y-Blue_Guard_Position_Y;
+	}
+	switch(Inspect_Position_temp)	//算出角度
+	{
+		case 1:
+			Target_Angle=atan(-dif_x/dif_y)/(PI/2.f)*90;
+		break;
+		
+		case 2:
+			Target_Angle=atan(dif_y/dif_x)/(PI/2.f)*90+90;
+		break;
+		
+		case 3:
+			Target_Angle=atan(dif_x/-dif_y)/(PI/2.f)*90+180;
+		break;
+		
+		case 4:
+			Target_Angle=atan(dif_y/dif_x)/(PI/2.f)*90+270;
+		break;
+		
+		default:
+			Target_Angle=45.f;
+		break;
+	}
+	Inspect_Position=Inspect_Position_temp;
 }

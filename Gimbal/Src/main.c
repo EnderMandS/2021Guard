@@ -38,12 +38,13 @@
 #include "caninfo.h"
 #include "gimbal.h"
 #include "buzzer.h"
+#include "crc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-uint8_t Send_Position_Buf[15]={0};
-uint8_t color=0;
+uint8_t Send_Position_Buf[16]={0};  //鍚慛UC鍙戦?佹暟鎹?
+uint8_t color=0;  //绾㈣摑鏂?
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -109,13 +110,13 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-	CAN_Filter_Init();
+	CAN_Filter_Init();  //can婊ゆ尝鍣ㄥ垵濮嬪寲
 	Bsp_UART_Receive_IT(&huart3,UART_Buffer,36);   //閬ユ帶
 	Bsp_UART_Receive_IT(&huart1, View_Buf, VIEW_BUF_LEN); //瑙嗚
 	Bsp_UART_Receive_IT(&huart6, Groy_Data_Buf, GROY_DATA_BUF_LEN);		//瑁佸垽绯荤粺
-	Shoot_Speed_Pid_Init();
+	Shoot_Speed_Pid_Init(); //鎽╂摝杞甈ID鍒濆鍖?
 	HAL_TIM_Base_Start_IT(&htim1);	//400Hz
-	Buzzer_Init();
+	Buzzer_Init();  //铚傞福鍣ㄥ垵濮嬪寲
 	HAL_TIM_Base_Start_IT(&htim6);	//1kHz
   /* USER CODE END 2 */
 
@@ -142,12 +143,12 @@ int main(void)
 			Send_Position_Buf[0] = 0x5A;
 			memcpy(Send_Position_Buf+1,send_pitch.c,4);	//1-4 pitch
 			memcpy(Send_Position_Buf+5,send_yaw.c,4);		//5-8 yaw
-			Send_Position_Buf[9]=26;
-			Send_Position_Buf[10]=0;
+			Send_Position_Buf[9]=25;	//射速整数位
+			Send_Position_Buf[10]=0;	//射速小数位
 			Send_Position_Buf[11] = color;
 			Send_Position_Buf[12] = false;
 			Send_Position_Buf[13] = false;
-			Send_Position_Buf[14] = 0xA5;
+			Append_CRC16_Check_Sum(Send_Position_Buf,COUNTOF(Send_Position_Buf));
 			Uart1_TransmissionT_Data(Send_Position_Buf,COUNTOF(Send_Position_Buf));
 			extern_view_send_state = 0;
 		}
