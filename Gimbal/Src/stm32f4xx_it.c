@@ -484,7 +484,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 	if(TIM1_Div>=2)	//µ×ÅÌ¿ØÖÆ
 	{
 		TIM1_Div=0;
-		if(Shootable==false)	//Read for judgement, unablde to shoot, 500 bullte limit
+		if(Shootable==false && Outpost_Alive==false)	//Read for judgement, unablde to shoot, 500 bullte limit
 		{
 			Chassic_State=1;
 			Shoot_Ctrl=0;

@@ -14,29 +14,26 @@
 #include "buzzer.h"
 #include "crc.h"
 
-uint8_t view_send_state;
-uint8_t Judgement_Buf[JUDGEMENT_BUF_LEN];
-uint8_t View_Buf[VIEW_BUF_LEN];
-uint8_t rx_view_buf[VIEW_BUF_LEN];
-uint8_t rxbuf[200];
-uint8_t Groy_Data_Buf[GROY_DATA_BUF_LEN];
-uint8_t UART_Buffer[36];
+uint8_t view_send_state;	//视觉串口接收角度标志位
+uint8_t View_Buf[VIEW_BUF_LEN];		//视觉串口接收缓冲区
+uint8_t rx_view_buf[VIEW_BUF_LEN];	//视觉串口接收区
+uint8_t Groy_Data_Buf[GROY_DATA_BUF_LEN];	//陀螺仪缓冲区
+uint8_t UART_Buffer[36];	//遥控器串口缓冲区
 float eular[3]; //欧拉角 eular[0]==Pitch eular[1]==Roll eular[2]==Yaw 
-int16_t gyo[3];
-uint8_t Hi229_Update=0;
-uint8_t view_shoot_mode ;
+uint8_t rxbuf[200]={0};
+uint8_t Hi229_Update=0;	//陀螺仪数据接收更新标志位
+uint8_t view_shoot_mode;	//视觉串口发射标志位
 float2uchar pitchangle;
 float2uchar yawangle;
 float2uchar send_pitch;
 float2uchar send_yaw;
-frame_judge save_frame_id_message[10] = {0};
-uint8_t extern_view_send_state = 0;
+uint8_t extern_view_send_state = 0;	//发送角度给NUC标志位
 uint8_t Aimming=0;		//判断自瞄或巡检
-#define Slow_Time 15	//20ms
-#define Shot_State_Stay_Time 10	//20ms
-uint16_t Shot_Stay_Time=0;
-uint16_t Slow_Inspect_Speed=Slow_Time;
-uint32_t Gryo_Update_cnt=0;
+#define Slow_Time 15	//20ms	检测到目标后云台减速时间	
+#define Shot_State_Stay_Time 10	//20ms	拨弹盘状态保持时间	识别可能会丢几帧,拨弹不需要停
+uint16_t Shot_Stay_Time=0;	//拨弹状态保持计数变量
+uint16_t Slow_Inspect_Speed=Slow_Time;	//云台减速时间变量
+uint32_t Gryo_Update_cnt=0;	//陀螺仪更新标志位
 
 /**
   * @brief  串口空闲中断DMA接收回调函数
@@ -71,8 +68,8 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 			{
 				case 0xAA:
 					view_send_state = 1;
-					Aimming = 0;
-					if(Slow_Inspect_Speed==0)
+					Aimming = 0;	//没有瞄准到
+					if(Slow_Inspect_Speed==0)	//清空计数,快速巡检
 						Gimbal_Inspect_setSpeed(Gimbal_Inspect_SPEED_FAST);
 					else
 						--Slow_Inspect_Speed;
@@ -81,18 +78,18 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 				case 0xDD:
 					view_send_state = 1;
 					Aimming = 0;
-					Slow_Inspect_Speed=Slow_Time;
+					Slow_Inspect_Speed=Slow_Time;	//减速巡检
 					Gimbal_Inspect_setSpeed(Gimbal_Inspect_SPEED_SLOW);
 					break;
 				
 				case 0xBB:
 					view_send_state = 2;
-					extern_view_send_state = 1;
+					extern_view_send_state = 1;	//发送角度数据
 					break;
 				
 				case 0xCC:
 					view_send_state = 3;
-					Aimming = 1;
+					Aimming = 1;	//瞄准到
 					Slow_Inspect_Speed=Slow_Time;
 					if(Shot_Stay_Time!=0)	//持续Shot_State_Stay_Time*20ms 50Hz
 						--Shot_Stay_Time;
@@ -110,7 +107,7 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 					break;
 			}
 
-			if(remote_control.switch_right==1 && view_send_state==3 )
+			if(remote_control.switch_right==1 && view_send_state==3 )	//接收角度
 			{
 				memcpy(pitchangle.c, rx_view_buf + 3, 4);
 				memcpy(yawangle.c, rx_view_buf + 7, 4);
@@ -128,9 +125,6 @@ void UART_IdleRxCallback(UART_HandleTypeDef *huart)
 			eular[0] = -((float)(int16_t)(rxbuf[14] + (rxbuf[15]<<8)))/100;	//pitch
 			eular[1] = ((float)(int16_t)(rxbuf[16] + (rxbuf[17]<<8)))/100;	//roll
 			eular[2] = (((float)(int16_t)(rxbuf[18] + (rxbuf[19]<<8)))/10);	//Yaw轴
-			gyo[0] =  (int16_t)(rxbuf[7] + (rxbuf[8]<<8));
-			gyo[1] =  (int16_t)(rxbuf[9] + (rxbuf[10]<<8));
-			gyo[2] =  (int16_t)(rxbuf[11] + (rxbuf[12]<<8));
 		}
 	}
 }

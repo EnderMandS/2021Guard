@@ -357,6 +357,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		case 1:	//正常移动
 		{
 			#ifdef USE_SPRING
+//				Rand_Hit_Creat();
 				Check_Being_Hit();	//被击打改变速度or toggle direction
 			#endif
 				if(Measuer_State==End_Measure)	//已获得轨道长度
@@ -541,7 +542,6 @@ void TIM1_UP_TIM10_IRQHandler(void)
 		#endif
 		Data[4]=Field_Event_Data.Base_Shield_Existence;	//基地护盾
 
-		#warning	//wait for test
 		#ifndef Test_Mode
 			if(BulletRemaining.bullet_remaining_num_17mm==0 && GameState.game_progress==4)	//500发		Shootable
 				Data[5]=false;	//剩余发弹量为0,向云台发送数据,具体处理在云台

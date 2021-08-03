@@ -34,5 +34,6 @@ void Set_Base_Shield_Existence(void);
 float Random(float Min, float Max);
 void Rand_Dir_Time(void);
 void Robot_Command_Receive(void);
+void Rand_Hit_Creat(void);
 
 #endif

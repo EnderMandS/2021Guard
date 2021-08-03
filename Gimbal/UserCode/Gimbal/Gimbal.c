@@ -7,10 +7,10 @@
 #include "usartinfo.h"
 #include "buzzer.h"
 
-#define Outpost_Mul_Inspect
-#define Outpost_Mul_Inspect_Times 3
+#define Outpost_Mul_Inspect	//前哨站重复巡检
+#define Outpost_Mul_Inspect_Times 3	//前哨站重复巡检次数
 
-#define Inspect_Empty 1
+#define Inspect_Empty 1	//巡检死区容许范围
 float Pitch_Inspect_Speed = 0.25f;	//0.08
 float Yaw_Inspect_Speed = 0.4f;	//it will be changed in function Gimbal_Inspect_setSpeed
 #define Yaw_Inspect_Speed_Offset 0.025f
@@ -29,8 +29,8 @@ bool Pitch_USE_Gyro=false;		//陀螺仪太抖、弃用，仅保留代码
 #define Yaw_Limit_Min 235.f	//257.6		231
 #define Yaw_Limit_Max	18.6f	//				18.6
 
-#define Yaw_Front_Middle (301.5f)
-#define Yaw_Back_Middle (Yaw_Front_Middle-180.f)
+#define Yaw_Front_Middle (301.5f)	//云台正前方
+#define Yaw_Back_Middle (Yaw_Front_Middle-180.f)	//正后方
 float yaw_center=301.5f;
 float Yaw_Soft_Start_Speed_Ratio=1.f;
 

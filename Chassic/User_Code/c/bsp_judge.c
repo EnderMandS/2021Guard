@@ -44,7 +44,7 @@ void Check_Being_Hit(void)	//受到伤害加速
 				Being_Hit==0 &&	//not at speed up state
 				rand()%2==0)	//50%概率 变向
 		{
-			Rand_cnt=(uint32_t)(Random(0.5,2.5)*400);	//new a rand change direction time
+			Rand_cnt=(uint32_t)(Random(0.5,2)*400);	//new a rand change direction time	//0.5  2.5
 			Hit_Random_CD_cnt=Hit_Random_CD;	//进入冷却
 			direction=-direction;	//速度反向
 			Last_Dir=direction;
@@ -213,7 +213,7 @@ void Rand_Dir_Time(void)	//随机变向
 			Buzzer_Short(1);
 		}
 		if(Rand_cnt==0)
-			Rand_cnt=(uint32_t)(Random(0.5,2.5)*400);	//new a rand number
+			Rand_cnt=(uint32_t)(Random(0.5,2)*400);	//new a rand number
 	}
 }
 
@@ -308,4 +308,17 @@ void Robot_Command_Receive(void)	//在裁判系统接收函数中调用
 		break;
 	}
 	Inspect_Position=Inspect_Position_temp;
+}
+
+uint32_t Rand_Hit_cnt=400;
+void Rand_Hit_Creat(void)	//400Hz
+{
+	if(Rand_Hit_cnt!=0)
+		
+		--Rand_Hit_cnt;
+	else
+	{
+		Rand_Hit_cnt=(uint32_t)(Random(2,4)*400);
+		Hurt_Data_Update=true;
+	}
 }

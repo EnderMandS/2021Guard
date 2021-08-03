@@ -103,8 +103,8 @@ void Gimbal_Receive(uint8_t Receive_Data[8])	//can云台接收数据转换函数
 		break;
 			
 		case 1:
-			if((is_red_or_blue()==BLUE && GameRobotHP.blue_7_robot_HP>250) ||	//瞄准到了,血量足够则减速,提高瞄准精确度
-					(is_red_or_blue()==RED && GameRobotHP.red_7_robot_HP>250))	//rest HP low, don't slow down
+			if((is_red_or_blue()==BLUE && GameRobotHP.blue_7_robot_HP>400) ||	//瞄准到了,血量足够则减速,提高瞄准精确度
+					(is_red_or_blue()==RED && GameRobotHP.red_7_robot_HP>400))	//rest HP low, don't slow down
 			{
 				Aim=true;
 				Classic_Move_Speed=Chassic_Spring_Slow;	//设置底盘速度为Slow
