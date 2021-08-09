@@ -541,12 +541,12 @@ void TIM6_DAC_IRQHandler(void)
   /* USER CODE END TIM6_DAC_IRQn 0 */
   HAL_TIM_IRQHandler(&htim6);
   /* USER CODE BEGIN TIM6_DAC_IRQn 1 */
-	if(Buzzer_Busy==false && Buzzer_cnt!=0 && Buzzer_On_Time!=0)
+	if(Buzzer_Busy==false && Buzzer_cnt!=0 && Buzzer_On_Time!=0)	//蜂鸣器忙判断
 		Buzzer_Busy=true;
 	if(Buzzer_Busy==true)
 	{
-		++TIM6_cnt;
-		if(TIM6_cnt<Buzzer_On_Time)
+		++TIM6_cnt;	//计数自增
+		if(TIM6_cnt<Buzzer_On_Time)	//在On_Time内响
 		{
 			if(Buzzer_Working==false)
 			{
@@ -554,7 +554,7 @@ void TIM6_DAC_IRQHandler(void)
 				Buzzer_Working=true;
 			}
 		}
-		else if(TIM6_cnt<Buzzer_On_Time+Buzzer_Off_Time)
+		else if(TIM6_cnt<Buzzer_On_Time+Buzzer_Off_Time)	//off_time停止
 		{
 			if(Buzzer_Working==true)
 			{
@@ -563,10 +563,10 @@ void TIM6_DAC_IRQHandler(void)
 			}
 		}
 		else
-		{
+		{	//on和off都计数完成，计数自减
 			TIM6_cnt=0;
 			--Buzzer_cnt;
-			if(Buzzer_cnt==0)
+			if(Buzzer_cnt==0)	//自减到零蜂鸣器非忙
 				Buzzer_Busy=false;
 		}
 	}

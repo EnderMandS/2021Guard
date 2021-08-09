@@ -285,7 +285,7 @@ void Robot_Command_Receive(void)	//在裁判系统接收函数中调用
 		dif_x=Robot_Command.target_position_x-Blue_Guard_Position_X;
 		dif_y=Robot_Command.target_position_y-Blue_Guard_Position_Y;
 	}
-	switch(Inspect_Position_temp)	//算出角度
+	switch(Inspect_Position_temp)	//算出角度 小地图坐标系转机器人的位置坐标系
 	{
 		case 1:
 			Target_Angle=atan(-dif_x/dif_y)/(PI/2.f)*90;

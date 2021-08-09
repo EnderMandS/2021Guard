@@ -1,3 +1,11 @@
+/*
+ * @Author: M
+ * @Date: 2021-04-11 09:56:15
+ * @LastEditTime: 2021-08-09 15:23:56
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: \MDK-ARMe:\RM\Guard\NewGuard\Gimbal\UserCode\Chassic\classic.h
+ */
 #ifndef _CHASSIC_H
 #define _CHASSIC_H
 #include "pid.h"

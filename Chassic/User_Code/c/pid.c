@@ -1,19 +1,27 @@
+/*
+ * @Author: your name
+ * @Date: 2021-05-21 10:31:10
+ * @LastEditTime: 2021-08-09 15:42:06
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: \MDK-ARMe:\RM\Guard\NewGuard\Chassic\User_Code\c\pid.c
+ */
 #include "pid.h"
 
 #define ABS(x) ((x > 0) ? x : -x)
 static void pid_param_init(
-														PID_TypeDef *pid,
-														PID_ID id,
-														uint16_t maxout,
-														uint16_t intergral_limit,
-														float deadband,
-														uint16_t period,
-														int16_t max_err,
-														int16_t target,
+							PID_TypeDef *pid,
+							PID_ID id,
+							uint16_t maxout,
+							uint16_t intergral_limit,
+							float deadband,
+							uint16_t period,
+							int16_t max_err,
+							int16_t target,
 
-														float kp,
-														float ki,
-														float kd)
+							float kp,
+							float ki,
+							float kd)
 {
 	pid->id = id;
 

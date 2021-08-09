@@ -110,13 +110,13 @@ int main(void)
   MX_TIM4_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-	CAN_Filter_Init();  //can婊ゆ尝鍣ㄥ垵濮嬪寲
-	Bsp_UART_Receive_IT(&huart3,UART_Buffer,36);   //閬ユ帶
-	Bsp_UART_Receive_IT(&huart1, View_Buf, VIEW_BUF_LEN); //瑙嗚
-	Bsp_UART_Receive_IT(&huart6, Groy_Data_Buf, GROY_DATA_BUF_LEN);		//瑁佸垽绯荤粺
-	Shoot_Speed_Pid_Init(); //鎽╂摝杞甈ID鍒濆鍖?
-	HAL_TIM_Base_Start_IT(&htim1);	//400Hz
-	Buzzer_Init();  //铚傞福鍣ㄥ垵濮嬪寲
+	CAN_Filter_Init();  //can_Init
+	Bsp_UART_Receive_IT(&huart3,UART_Buffer,36);  //遥控器串口初始化
+	Bsp_UART_Receive_IT(&huart1, View_Buf, VIEW_BUF_LEN); //视觉串口初始化
+	Bsp_UART_Receive_IT(&huart6, Groy_Data_Buf, GROY_DATA_BUF_LEN);	 //陀螺仪串口初始化
+	Shoot_Speed_Pid_Init(); //摩擦轮PID初始化
+	HAL_TIM_Base_Start_IT(&htim1);	//400Hz主定时器
+	Buzzer_Init();  //蜂鸣器初始化
 	HAL_TIM_Base_Start_IT(&htim6);	//1kHz
   /* USER CODE END 2 */
 
@@ -127,30 +127,30 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		if(extern_view_send_state == 1)
+		if(extern_view_send_state == 1) //视觉串口接收的发送当前角度的指令
 		{
 			if(Pitch_USE_Gyro==true)
 				send_pitch.f = eular[0];
 			else
-				send_pitch.f = pit_nowangle-Pitch_Motor_Zero;
+				send_pitch.f = pit_nowangle-Pitch_Motor_Zero; //云台坐标系转视觉坐标系
 			
 			if (yaw_nowangle > 180) {
 				send_yaw.f = -(360 - yaw_nowangle);
 			} else {
-				send_yaw.f = yaw_nowangle;
+				send_yaw.f = yaw_nowangle;  //云台坐标系转视觉坐标系
 			}
 			
-			Send_Position_Buf[0] = 0x5A;
+			Send_Position_Buf[0] = 0x5A;  //帧头
 			memcpy(Send_Position_Buf+1,send_pitch.c,4);	//1-4 pitch
 			memcpy(Send_Position_Buf+5,send_yaw.c,4);		//5-8 yaw
 			Send_Position_Buf[9]=25;	//射速整数位
 			Send_Position_Buf[10]=0;	//射速小数位
-			Send_Position_Buf[11] = color;
-			Send_Position_Buf[12] = false;
-			Send_Position_Buf[13] = false;
-			Append_CRC16_Check_Sum(Send_Position_Buf,COUNTOF(Send_Position_Buf));
-			Uart1_TransmissionT_Data(Send_Position_Buf,COUNTOF(Send_Position_Buf));
-			extern_view_send_state = 0;
+			Send_Position_Buf[11] = color;  //红蓝方颜色
+			Send_Position_Buf[12] = false;  //工作模式 0自瞄 1小符 2大符
+			Send_Position_Buf[13] = false;  //保留
+			Append_CRC16_Check_Sum(Send_Position_Buf,COUNTOF(Send_Position_Buf)); //追加两字节CRC16
+			Uart1_TransmissionT_Data(Send_Position_Buf,COUNTOF(Send_Position_Buf)); //发送
+			extern_view_send_state = 0; //清空标志位
 		}
   }
   /* USER CODE END 3 */

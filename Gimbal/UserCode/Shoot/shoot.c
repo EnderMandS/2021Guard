@@ -1,3 +1,11 @@
+/*
+ * @Author: your name
+ * @Date: 2021-04-11 09:56:15
+ * @LastEditTime: 2021-08-09 15:26:45
+ * @LastEditors: Please set LastEditors
+ * @Description: In User Settings Edit
+ * @FilePath: \MDK-ARMe:\RM\Guard\NewGuard\Gimbal\UserCode\Shoot\shoot.c
+ */
 # include "shoot.h"
 # include "pid.h"
 #include "bsp_can.h"
@@ -10,6 +18,11 @@ PID_TypeDef Fric_wheel[2];
 int32_t set_spd_to_Fric_wheel[2];
 uint8_t Shoot_Ctrl=0;
 
+/**
+ * @description: 拨弹位置环PID
+ * @param {*}
+ * @return {*}
+ */
 void gear_moto_position_pid_init()
 {
 	Cartridge_Position_Pid[OUT].p =  0.15;
@@ -28,6 +41,15 @@ void gear_moto_position_pid_init()
 	Cartridge_Position_Pid[IN].iMax = 5000;
 	Cartridge_Position_Pid[IN].pidMax = 30000;
 }
+/**
+ * @description: 拨弹位置环PID计算
+ * @param {gear_moto_position_pid} *pid_out
+ * @param {gear_moto_position_pid} *pid_in
+ * @param {float} target
+ * @param {float} now_angle
+ * @param {int16_t} feeback_rpm
+ * @return {*}
+ */
 float gear_moto_position_pid_calc(gear_moto_position_pid *pid_out,gear_moto_position_pid *pid_in,float target,float now_angle,int16_t feeback_rpm)
 {
 	
@@ -58,6 +80,11 @@ float gear_moto_position_pid_calc(gear_moto_position_pid *pid_out,gear_moto_posi
 	pid_in->LastError = pid_in->CurrentError;
 	return pid_in->pidout;
 }
+/**
+ * @description: 射速PID初始化
+ * @param {*}
+ * @return {*}
+ */
 void Shoot_Speed_Pid_Init()
 {
 	for(uint8_t i=0; i<2; i++)
@@ -67,6 +94,11 @@ void Shoot_Speed_Pid_Init()
 	}
 }
 
+/**
+ * @description: 射速PID计算
+ * @param {float} Fric_Speed_target 
+ * @return {*}
+ */
 void Shoot_Speed_Pid_Calc(float Fric_Speed_target)
 {
 		set_spd_to_Fric_wheel[0] = Fric_Speed_target;
