@@ -171,7 +171,7 @@ void Gimbal_Sotf_Start(void)
 			Direction=1;
 		else if(dif>180)
 			Direction=-1;
-		yaw_angle += 0.075f*Yaw_Soft_Start_Speed_Ratio*Direction;
+		yaw_angle += 0.1f*Yaw_Soft_Start_Speed_Ratio*Direction;
 		
 		float Soft_Start_Angle_Pitch=pitch_angle;	//调试用的,方便切换
 		float Soft_Start_Angle_Yaw=yaw_angle;
@@ -215,7 +215,7 @@ void Gimbal_Sotf_Start(void)
 								else if(Set_State==5)	//第五次，即完成零点采样
 								{
 									Buzzer_Short(2);
-									Yaw_Soft_Start_Speed_Ratio=1;	//Yaw缓起速度改为原本的速度
+									Yaw_Soft_Start_Speed_Ratio=3;	//Yaw缓起速度改为原本的速度
 									Set_Zero_Complete = true;	//置位零点采样完成标志
 									control_allow = 1;	//置位允许控制
 									sotf_start = 0;	//置位缓起

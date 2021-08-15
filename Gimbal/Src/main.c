@@ -143,7 +143,7 @@ int main(void)
 			Send_Position_Buf[0] = 0x5A;  //帧头
 			memcpy(Send_Position_Buf+1,send_pitch.c,4);	//1-4 pitch
 			memcpy(Send_Position_Buf+5,send_yaw.c,4);		//5-8 yaw
-			Send_Position_Buf[9]=25;	//射速整数位
+			Send_Position_Buf[9]=26;	//射速整数位
 			Send_Position_Buf[10]=0;	//射速小数位
 			Send_Position_Buf[11] = color;  //红蓝方颜色
 			Send_Position_Buf[12] = false;  //工作模式 0自瞄 1小符 2大符

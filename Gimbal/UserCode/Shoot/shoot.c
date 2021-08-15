@@ -90,7 +90,7 @@ void Shoot_Speed_Pid_Init()
 	for(uint8_t i=0; i<2; i++)
 	{
 		pid_init(&Fric_wheel[i]);
-		Fric_wheel[i].f_param_init(&Fric_wheel[i],PID_Speed,13926,5000,10,0,8000,0,1.5,0.1,0);
+		Fric_wheel[i].f_param_init(&Fric_wheel[i],PID_Speed,16384,5000,10,0,8000,0,5,0.1,0.5);
 	}
 }
 
@@ -99,12 +99,17 @@ void Shoot_Speed_Pid_Init()
  * @param {float} Fric_Speed_target 
  * @return {*}
  */
+float Shoot_PID_P=5;
+float Shoot_PID_I=0.1;
+float Shoot_PID_D=0.5;
 void Shoot_Speed_Pid_Calc(float Fric_Speed_target)
 {
-		set_spd_to_Fric_wheel[0] = Fric_Speed_target;
-		set_spd_to_Fric_wheel[1] = -Fric_Speed_target;
-		Fric_wheel[0].target = set_spd_to_Fric_wheel[0];
-		Fric_wheel[0].f_cal_pid(&Fric_wheel[0],gear_motor_data[Fric_1].speed_rpm);		
-		Fric_wheel[1].target = set_spd_to_Fric_wheel[1];
-		Fric_wheel[1].f_cal_pid(&Fric_wheel[1],gear_motor_data[Fric_2].speed_rpm);
+	for(uint8_t i=0; i<2; i++)
+		Fric_wheel[i].f_pid_reset(&Fric_wheel[i],Shoot_PID_P,Shoot_PID_I,Shoot_PID_D);
+	set_spd_to_Fric_wheel[0] = Fric_Speed_target;
+	set_spd_to_Fric_wheel[1] = -Fric_Speed_target;
+	Fric_wheel[0].target = set_spd_to_Fric_wheel[0];
+	Fric_wheel[0].f_cal_pid(&Fric_wheel[0],gear_motor_data[Fric_1].speed_rpm);		
+	Fric_wheel[1].target = set_spd_to_Fric_wheel[1];
+	Fric_wheel[1].f_cal_pid(&Fric_wheel[1],gear_motor_data[Fric_2].speed_rpm);
 }

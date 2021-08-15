@@ -68,7 +68,7 @@ uint8_t TIM1_Div=0;	//·ÖÆµ¼ÆÊý
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-int Firc_Speed=6200;		//6100
+int Firc_Speed=8500;		//6100
 /*
 	3000 10m/s
 	
@@ -415,7 +415,7 @@ void TIM1_UP_TIM10_IRQHandler(void)
 					
 					case 2:	//None
 					{
-						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=0;
+						Motor_Output_State[Fric_1]=Motor_Output_State[Fric_2]=1;
 						Shoot_Ctrl=0;
 						Chassic_State=0;
 						Shoot_Speed_Pid_Calc(0);	//friction

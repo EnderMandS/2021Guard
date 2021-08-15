@@ -274,8 +274,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 				gear_motor_data[Chassic_R].real_current!=0 &&
 				gear_motor_data[Cartridge].real_current!=0)
 		Motor_Power_Up=1;
-		else
-			Buzzer_ms(1,50,2000);
+//		else
+//			Buzzer_ms(1,50,2000);
 	}
 
 	++Time_Tick;	//Time_Tick在CAN接收服务函数中置零
