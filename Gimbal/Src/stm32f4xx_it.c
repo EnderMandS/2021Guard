@@ -307,8 +307,8 @@ void TIM1_UP_TIM10_IRQHandler(void)
 			gear_motor_data[Fric_2].real_current!=0	  &&
 			Hi229_Update!=0	)
 				Motor_Power_Up=1;
-		else
-			Buzzer_ms(1,50,2000);
+//		else
+//			Buzzer_ms(1,50,2000);
 	}
 
 	yaw_nowangle = Yaw_Motor_Angle_Change();	//获得yaw角度,0-360,有同步带,需要角度转换
